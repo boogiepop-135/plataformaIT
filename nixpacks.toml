@@ -1,0 +1,17 @@
+[providers]
+python = "3.10"
+nodejs = "18"
+
+[phases.build]
+cmds = [
+    "npm install",
+    "npm run build",
+    "pip install -r requirements.txt"
+]
+
+[phases.deploy]
+cmd = "gunicorn wsgi --chdir ./src/"
+
+[variables]
+FLASK_APP = "src/app.py"
+FLASK_DEBUG = "0"
