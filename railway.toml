@@ -1,0 +1,11 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "gunicorn wsgi --chdir ./src/"
+restartPolicyType = "on_failure"
+
+[env]
+FLASK_APP = "src/app.py"
+FLASK_DEBUG = "0"
+PYTHON_VERSION = "3.10"
