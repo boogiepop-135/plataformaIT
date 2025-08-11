@@ -129,6 +129,7 @@ div {
   border: 1px solid #dee2e6;
   border-radius: 8px;
   overflow: hidden;
+  color: #343a40 !important;
 }
 
 .calendar-header {
@@ -163,6 +164,7 @@ div {
   cursor: pointer;
   transition: background-color 0.2s;
   background-color: white;
+  color: #343a40 !important;
 }
 
 .calendar-day:last-child {
@@ -429,12 +431,65 @@ small {
 }
 
 /* Ensure calendar symbols and labels are visible */
+.calendar-container {
+  color: #343a40 !important;
+}
+
 .calendar-container * {
-  color: inherit !important;
+  color: #343a40 !important;
 }
 
 .calendar-day-header {
   color: #ffffff !important;
+}
+
+.calendar-day .day-number {
+  color: #343a40 !important;
+}
+
+.calendar-day.today .day-number {
+  color: #1976d2 !important;
+}
+
+/* Fix sidebar and event type text */
+.upcoming-events h6,
+.upcoming-events .text-muted,
+.event-types h6,
+.event-types .text-muted,
+.event-types .badge {
+  color: #343a40 !important;
+}
+
+/* Fix specific calendar page elements */
+.calendar-page h4,
+.calendar-page h5,
+.calendar-page h6,
+.calendar-page .row .col-lg-3 h6,
+.calendar-page .row .col-lg-3 .text-muted,
+.calendar-page .card-body h6,
+.calendar-page .card-body .text-muted,
+.calendar-page .badge {
+  color: #343a40 !important;
+}
+
+/* Specific calendar sidebar fixes */
+.col-lg-3 .card .card-body p,
+.col-lg-3 .card .card-body h6,
+.col-lg-3 .card .card-body small,
+.col-lg-3 .card .card-body span,
+.col-lg-3 .card .card-body div {
+  color: #343a40 !important;
+}
+
+/* Force visibility for "No hay eventos próximos" and event type labels */
+.text-dark.fw-bold,
+.card-body .text-dark.fw-bold,
+.card-body p.text-dark.fw-bold,
+.card-body span.text-dark.fw-bold,
+.card-body small.text-dark.fw-bold,
+.card-body h6.text-dark.fw-bold {
+  color: #343a40 !important;
+  font-weight: bold !important;
 }
 
 /* Improve visibility of all text elements */

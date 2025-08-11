@@ -35,8 +35,7 @@ export const TicketSystem = () => {
 
     const loadTickets = async () => {
         try {
-            const backendUrl = import.meta.env.VITE_BACKEND_URL;
-            const response = await fetch(`${backendUrl}/api/tickets`);
+            const response = await fetch(`${BACKEND_URL}/api/tickets`);
             if (response.ok) {
                 const data = await response.json();
                 setTickets(data);
@@ -48,10 +47,9 @@ export const TicketSystem = () => {
 
     const handleSaveTicket = async () => {
         try {
-            const backendUrl = import.meta.env.VITE_BACKEND_URL;
             const url = editingTicket
-                ? `${backendUrl}/api/tickets/${editingTicket.id}`
-                : `${backendUrl}/api/tickets`;
+                ? `${BACKEND_URL}/api/tickets/${editingTicket.id}`
+                : `${BACKEND_URL}/api/tickets`;
 
             const method = editingTicket ? "PUT" : "POST";
 
@@ -97,8 +95,7 @@ export const TicketSystem = () => {
     const handleDeleteTicket = async (ticketId) => {
         if (confirm("¿Estás seguro de que quieres eliminar este ticket?")) {
             try {
-                const backendUrl = import.meta.env.VITE_BACKEND_URL;
-                const response = await fetch(`${backendUrl}/api/tickets/${ticketId}`, {
+                const response = await fetch(`${BACKEND_URL}/api/tickets/${ticketId}`, {
                     method: "DELETE",
                 });
 

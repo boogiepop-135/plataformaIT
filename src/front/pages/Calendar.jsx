@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import BACKEND_URL from "../config/backend.js";
 
 export const Calendar = () => {
     const [events, setEvents] = useState([]);
@@ -37,8 +38,7 @@ export const Calendar = () => {
 
     const loadEvents = async () => {
         try {
-            const backendUrl = import.meta.env.VITE_BACKEND_URL;
-            const response = await fetch(`${backendUrl}/api/calendar-events`);
+            const response = await fetch(`${BACKEND_URL}/api/calendar-events`);
             if (response.ok) {
                 const data = await response.json();
                 setEvents(data);
@@ -50,10 +50,9 @@ export const Calendar = () => {
 
     const handleSaveEvent = async () => {
         try {
-            const backendUrl = import.meta.env.VITE_BACKEND_URL;
             const url = editingEvent
-                ? `${backendUrl}/api/calendar-events/${editingEvent.id}`
-                : `${backendUrl}/api/calendar-events`;
+                ? `${BACKEND_URL}/api/calendar-events/${editingEvent.id}`
+                : `${BACKEND_URL}/api/calendar-events`;
 
             const method = editingEvent ? "PUT" : "POST";
 
@@ -119,8 +118,7 @@ export const Calendar = () => {
     const handleDeleteEvent = async (eventId) => {
         if (confirm("¿Estás seguro de que quieres eliminar este evento?")) {
             try {
-                const backendUrl = import.meta.env.VITE_BACKEND_URL;
-                const response = await fetch(`${backendUrl}/api/calendar-events/${eventId}`, {
+                const response = await fetch(`${BACKEND_URL}/api/calendar-events/${eventId}`, {
                     method: "DELETE",
                 });
 

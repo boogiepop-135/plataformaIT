@@ -46,8 +46,8 @@ export const KanbanBoard = () => {
     const handleSaveTask = async () => {
         try {
             const url = editingTask
-                ? `${backendUrl}/api/tasks/${editingTask.id}`
-                : `${backendUrl}/api/tasks`;
+                ? `${BACKEND_URL}/api/tasks/${editingTask.id}`
+                : `${BACKEND_URL}/api/tasks`;
 
             const method = editingTask ? "PUT" : "POST";
 
@@ -91,8 +91,7 @@ export const KanbanBoard = () => {
     const handleDeleteTask = async (taskId) => {
         if (confirm("¿Estás seguro de que quieres eliminar esta tarea?")) {
             try {
-                const backendUrl = import.meta.env.VITE_BACKEND_URL;
-                const response = await fetch(`${backendUrl}/api/tasks/${taskId}`, {
+                const response = await fetch(`${BACKEND_URL}/api/tasks/${taskId}`, {
                     method: "DELETE",
                 });
 
@@ -119,8 +118,7 @@ export const KanbanBoard = () => {
 
         if (taskData.status !== newStatus) {
             try {
-                const backendUrl = import.meta.env.VITE_BACKEND_URL;
-                const response = await fetch(`${backendUrl}/api/tasks/${taskData.id}`, {
+                const response = await fetch(`${BACKEND_URL}/api/tasks/${taskData.id}`, {
                     method: "PUT",
                     headers: {
                         "Content-Type": "application/json",
