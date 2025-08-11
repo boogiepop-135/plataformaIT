@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import BACKEND_URL from "../config/backend.js";
 
 export const TicketSystem = () => {
     const [tickets, setTickets] = useState([]);

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import BACKEND_URL from "../config/backend.js";
 
 export const KanbanBoard = () => {
     const [tasks, setTasks] = useState([]);
@@ -32,8 +33,7 @@ export const KanbanBoard = () => {
 
     const loadTasks = async () => {
         try {
-            const backendUrl = import.meta.env.VITE_BACKEND_URL;
-            const response = await fetch(`${backendUrl}/api/tasks`);
+            const response = await fetch(`${BACKEND_URL}/api/tasks`);
             if (response.ok) {
                 const data = await response.json();
                 setTasks(data);
@@ -45,7 +45,6 @@ export const KanbanBoard = () => {
 
     const handleSaveTask = async () => {
         try {
-            const backendUrl = import.meta.env.VITE_BACKEND_URL;
             const url = editingTask
                 ? `${backendUrl}/api/tasks/${editingTask.id}`
                 : `${backendUrl}/api/tasks`;

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react"
 import { Link } from "react-router-dom";
 import useGlobalReducer from "../hooks/useGlobalReducer.jsx";
+import BACKEND_URL from "../config/backend.js";
 
 export const Home = () => {
 
@@ -13,19 +14,16 @@ export const Home = () => {
 
 	const loadStats = async () => {
 		try {
-			const backendUrl = import.meta.env.VITE_BACKEND_URL
-			if (!backendUrl) throw new Error("VITE_BACKEND_URL is not defined in .env file")
-
 			// Load tasks
-			const tasksResponse = await fetch(backendUrl + "/api/tasks")
+			const tasksResponse = await fetch(BACKEND_URL + "/api/tasks")
 			const tasksData = await tasksResponse.json()
 
 			// Load tickets
-			const ticketsResponse = await fetch(backendUrl + "/api/tickets")
+			const ticketsResponse = await fetch(BACKEND_URL + "/api/tickets")
 			const ticketsData = await ticketsResponse.json()
 
 			// Load events
-			const eventsResponse = await fetch(backendUrl + "/api/calendar-events")
+			const eventsResponse = await fetch(BACKEND_URL + "/api/calendar-events")
 			const eventsData = await eventsResponse.json()
 
 			if (tasksResponse.ok && ticketsResponse.ok && eventsResponse.ok) {
@@ -63,10 +61,7 @@ export const Home = () => {
 
 	const loadMessage = async () => {
 		try {
-			const backendUrl = import.meta.env.VITE_BACKEND_URL
-			if (!backendUrl) throw new Error("VITE_BACKEND_URL is not defined in .env file")
-
-			const response = await fetch(backendUrl + "/api/hello")
+			const response = await fetch(BACKEND_URL + "/api/hello")
 			const data = await response.json()
 
 			if (response.ok) dispatch({ type: "set_hello", payload: data.message })
