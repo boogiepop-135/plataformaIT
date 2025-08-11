@@ -25,20 +25,34 @@ if db_url is not None:
     app.config['SQLALCHEMY_DATABASE_URI'] = db_url.replace(
         "postgres://", "postgresql://")
 else:
-    app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:////tmp/test.db"
+    # Use absolute path for SQLite database compatible with Windows
+    db_path = os.path.join(os.path.dirname(__file__), 'database.db')
+    # Convert Windows path to forward slashes for SQLite
+    db_path = db_path.replace('\\', '/')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{db_path}"
+    print(f"🔍 Database path: {db_path}")
+    print(f"🔍 Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    print(f"🔍 Database file exists: {os.path.exists(db_path)}")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+print("🔍 Initializing Flask-Migrate...")
 MIGRATE = Migrate(app, db, compare_type=True)
+print("🔍 Initializing database...")
 db.init_app(app)
+print("🔍 Database initialized successfully")
 
 # add the admin
+print("🔍 Setting up admin...")
 setup_admin(app)
 
 # add the admin
+print("🔍 Setting up commands...")
 setup_commands(app)
 
 # Add all endpoints form the API with a "api" prefix
+print("🔍 Registering API blueprint...")
 app.register_blueprint(api, url_prefix='/api')
+print("🔍 API blueprint registered successfully")
 
 # Handle/serialize errors like a JSON object
 

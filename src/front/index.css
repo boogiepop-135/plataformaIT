@@ -1,0 +1,537 @@
+/* Bootstrap integration and custom styles for IT Management Platform */
+
+/* Import Bootstrap */
+@import "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css";
+@import "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css";
+
+/* Global Styles */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    sans-serif;
+  background-color: #f8f9fa;
+  color: #343a40;
+}
+
+/* Ensure all text is readable */
+* {
+  color: inherit;
+}
+
+/* Override Bootstrap dark text */
+.text-dark {
+  color: #343a40 !important;
+}
+
+.text-black-50 {
+  color: #6c757d !important;
+}
+
+/* Improve text contrast across the app */
+.text-muted {
+  color: #6c757d !important;
+}
+
+.card-text,
+.card-title,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+span,
+div {
+  color: #343a40 !important;
+}
+
+.text-white {
+  color: #ffffff !important;
+}
+
+/* Better text visibility on light backgrounds */
+.card .card-body {
+  color: #343a40 !important;
+}
+
+.card .card-header {
+  color: #343a40 !important;
+}
+
+/* Navbar text improvements */
+.navbar-dark .navbar-nav .nav-link {
+  color: #ffffff !important;
+}
+
+.navbar-dark .navbar-brand {
+  color: #ffffff !important;
+}
+
+/* Card header improvements */
+.card-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  color: #212529 !important;
+}
+
+.card-header h5,
+.card-header h6 {
+  color: #343a40 !important;
+  font-weight: 600;
+}
+
+/* Custom Card Animations */
+.card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Kanban Board Styles */
+.kanban-column {
+  min-height: 500px;
+  border-radius: 8px;
+}
+
+.kanban-card {
+  cursor: move;
+  transition: all 0.2s ease;
+  border-left: 4px solid #007bff;
+}
+
+.kanban-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.kanban-card.priority-low {
+  border-left-color: #28a745;
+}
+
+.kanban-card.priority-medium {
+  border-left-color: #ffc107;
+}
+
+.kanban-card.priority-high {
+  border-left-color: #fd7e14;
+}
+
+.kanban-card.priority-urgent {
+  border-left-color: #dc3545;
+}
+
+/* Calendar Styles */
+.calendar-container {
+  width: 100%;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.calendar-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background-color: #495057;
+  color: white;
+}
+
+.calendar-day-header {
+  padding: 12px;
+  text-align: center;
+  font-weight: 600;
+  border-right: 1px solid #6c757d;
+  color: white !important;
+}
+
+.calendar-day-header:last-child {
+  border-right: none;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.calendar-day {
+  min-height: 120px;
+  border-right: 1px solid #dee2e6;
+  border-bottom: 1px solid #dee2e6;
+  padding: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  background-color: white;
+}
+
+.calendar-day:last-child {
+  border-right: none;
+}
+
+.calendar-day:hover {
+  background-color: #f8f9fa;
+}
+
+.calendar-day.today {
+  background-color: #e3f2fd;
+  border-color: #2196f3;
+}
+
+.calendar-day.empty {
+  background-color: #f8f9fa;
+  cursor: default;
+}
+
+.day-number {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #343a40 !important;
+  font-size: 0.9rem;
+}
+
+.calendar-day.today .day-number {
+  color: #1976d2 !important;
+  font-weight: bold;
+}
+
+.day-events {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 80px;
+  overflow: hidden;
+}
+
+.event-item {
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: white !important;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.event-item:hover {
+  opacity: 0.8;
+}
+
+/* Event Types Legend - Improve text visibility */
+.card-body .d-flex span:last-child {
+  color: #343a40 !important;
+  font-weight: 500;
+}
+
+/* Badge improvements for better contrast */
+.badge {
+  font-weight: 600 !important;
+}
+
+.badge.bg-warning {
+  color: #000 !important;
+}
+
+.badge.bg-light {
+  color: #000 !important;
+  border: 1px solid #dee2e6;
+}
+
+.day-events {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 80px;
+  overflow: hidden;
+}
+
+.event-item {
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: white;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event-item:hover {
+  opacity: 0.8;
+}
+
+/* Ticket System Styles */
+.ticket-card {
+  transition: all 0.2s ease;
+  border-left: 4px solid #007bff;
+}
+
+.ticket-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.ticket-card.priority-low {
+  border-left-color: #28a745;
+}
+
+.ticket-card.priority-medium {
+  border-left-color: #ffc107;
+}
+
+.ticket-card.priority-high {
+  border-left-color: #fd7e14;
+}
+
+.ticket-card.priority-urgent {
+  border-left-color: #dc3545;
+}
+
+/* Dashboard Stats Cards */
+.stats-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  transition: transform 0.3s ease;
+}
+
+.stats-card:hover {
+  transform: scale(1.05);
+}
+
+.stats-card.bg-primary {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+}
+
+.stats-card.bg-warning {
+  background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+}
+
+.stats-card.bg-success {
+  background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+}
+
+.stats-card.bg-info {
+  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+}
+
+/* Navigation Styles */
+.navbar-brand {
+  font-weight: 600;
+  font-size: 1.3rem;
+}
+
+.nav-link {
+  transition: all 0.2s ease;
+  border-radius: 4px;
+  margin: 0 2px;
+}
+
+.nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Modal Enhancements */
+.modal-content {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  border-bottom: 1px solid #e9ecef;
+  border-radius: 12px 12px 0 0;
+  background-color: #f8f9fa;
+}
+
+/* Form Enhancements */
+.form-control:focus,
+.form-select:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Button Enhancements */
+.btn {
+  transition: all 0.2s ease;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn-outline-secondary {
+  border-color: #6c757d;
+  color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+/* Small text improvements */
+small {
+  color: #6c757d !important;
+  font-weight: 500;
+}
+
+/* Modal text improvements */
+.modal-body label,
+.modal-body .form-label {
+  color: #343a40 !important;
+  font-weight: 600;
+}
+
+/* Form input text */
+.form-control,
+.form-select {
+  color: #343a40 !important;
+}
+
+.form-control::placeholder {
+  color: #6c757d !important;
+}
+
+/* Utility Classes */
+.shadow-hover {
+  transition: box-shadow 0.3s ease;
+}
+
+.shadow-hover:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Improve text visibility in all contexts */
+.table {
+  color: #343a40 !important;
+}
+
+.table th,
+.table td {
+  color: #343a40 !important;
+}
+
+/* List group improvements */
+.list-group-item {
+  color: #343a40 !important;
+}
+
+/* Alert text */
+.alert {
+  color: #343a40 !important;
+}
+
+/* Ensure calendar symbols and labels are visible */
+.calendar-container * {
+  color: inherit !important;
+}
+
+.calendar-day-header {
+  color: #ffffff !important;
+}
+
+/* Improve visibility of all text elements */
+span,
+div,
+p,
+label,
+.text-secondary {
+  color: #343a40 !important;
+}
+
+/* Keep specific white text elements */
+.text-white,
+.navbar-dark .navbar-nav .nav-link,
+.navbar-dark .navbar-brand,
+.calendar-day-header,
+.event-item,
+.stats-card * {
+  color: #ffffff !important;
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Loading Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .calendar-day {
+    min-height: 80px;
+    padding: 4px;
+  }
+
+  .day-events {
+    max-height: 50px;
+  }
+
+  .event-item {
+    font-size: 0.6rem;
+    padding: 1px 4px;
+  }
+
+  .kanban-column {
+    margin-bottom: 20px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #1a1a1a;
+    color: #ffffff;
+  }
+
+  .card {
+    background-color: #2d2d2d;
+    border-color: #404040;
+  }
+
+  .calendar-day {
+    background-color: #2d2d2d;
+    color: #ffffff;
+  }
+
+  .calendar-day.empty {
+    background-color: #1a1a1a;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .navbar,
+  .btn,
+  .modal {
+    display: none !important;
+  }
+
+  .card {
+    border: 1px solid #000 !important;
+    box-shadow: none !important;
+  }
+}
