@@ -6,7 +6,8 @@
 
 /* Clean Professional Typography */
 body {
-  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Roboto", Arial, sans-serif;
+  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Roboto", Arial,
+    sans-serif;
   background: linear-gradient(135deg, #f8fbff 0%, #ffffff 100%);
   color: #2c3e50;
   line-height: 1.5;
@@ -17,22 +18,24 @@ body {
 
 /* Professional Blue & White Color System */
 :root {
-  --primary-blue: #2563eb;           /* Modern Blue */
-  --primary-blue-dark: #1d4ed8;      /* Darker Blue */
-  --primary-blue-light: #3b82f6;     /* Light Blue */
-  --accent-blue: #60a5fa;            /* Accent Blue */
-  --success-green: #10b981;          /* Success Green */
-  --warning-orange: #f59e0b;         /* Warning Orange */
-  --error-red: #ef4444;              /* Error Red */
-  --white: #ffffff;                  /* Pure White */
-  --gray-50: #f9fafb;               /* Very Light Gray */
-  --gray-100: #f3f4f6;              /* Light Gray */
-  --gray-200: #e5e7eb;              /* Border Gray */
-  --gray-600: #4b5563;              /* Text Gray */
-  --gray-800: #1f2937;              /* Dark Text */
+  --primary-blue: #2563eb; /* Modern Blue */
+  --primary-blue-dark: #1d4ed8; /* Darker Blue */
+  --primary-blue-light: #3b82f6; /* Light Blue */
+  --accent-blue: #60a5fa; /* Accent Blue */
+  --success-green: #10b981; /* Success Green */
+  --warning-orange: #f59e0b; /* Warning Orange */
+  --error-red: #ef4444; /* Error Red */
+  --white: #ffffff; /* Pure White */
+  --gray-50: #f9fafb; /* Very Light Gray */
+  --gray-100: #f3f4f6; /* Light Gray */
+  --gray-200: #e5e7eb; /* Border Gray */
+  --gray-600: #4b5563; /* Text Gray */
+  --gray-800: #1f2937; /* Dark Text */
   --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 /* Modern Clean Cards */
@@ -51,7 +54,11 @@ body {
 }
 
 .card-header {
-  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-light) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-blue) 0%,
+    var(--primary-blue-light) 100%
+  );
   color: var(--white);
   border: none;
   padding: 16px 24px;
@@ -95,13 +102,21 @@ body {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-light) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-blue) 0%,
+    var(--primary-blue-light) 100%
+  );
   color: var(--white);
   box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--primary-blue-dark) 0%, var(--primary-blue) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-blue-dark) 0%,
+    var(--primary-blue) 100%
+  );
   color: var(--white);
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
@@ -171,7 +186,11 @@ body {
 
 /* Modern Professional Navigation */
 .navbar {
-  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    var(--primary-blue) 0%,
+    var(--primary-blue-dark) 100%
+  ) !important;
   border: none !important;
   box-shadow: var(--shadow-md);
   padding: 12px 0;
@@ -500,7 +519,11 @@ div {
 
 .kanban-card.priority-urgent {
   border-left-color: var(--error-red);
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(255, 255, 255, 1) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.05) 0%,
+    rgba(255, 255, 255, 1) 100%
+  );
 }
 
 /* Professional Calendar Styles - SharePoint Inspired */
@@ -1107,7 +1130,11 @@ small {
 .calendar-header {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-light) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    var(--primary-blue) 0%,
+    var(--primary-blue-light) 100%
+  ) !important;
 }
 
 .calendar-day-header {
@@ -1147,14 +1174,22 @@ small {
 }
 
 .calendar-day:hover {
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, var(--white) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(37, 99, 235, 0.05) 0%,
+    var(--white) 100%
+  ) !important;
   transform: scale(1.02) !important;
   box-shadow: var(--shadow-md) !important;
   z-index: 10;
 }
 
 .calendar-day.today {
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, var(--white) 100%) !important;
+  background: linear-gradient(
+    135deg,
+    rgba(37, 99, 235, 0.1) 0%,
+    var(--white) 100%
+  ) !important;
   border: 2px solid var(--primary-blue) !important;
   box-shadow: var(--shadow-md) !important;
 }
@@ -1262,15 +1297,15 @@ small {
   .container-fluid {
     padding: 16px;
   }
-  
+
   .card-body {
     padding: 16px;
   }
-  
+
   .page-title {
     font-size: 24px !important;
   }
-  
+
   .navbar-brand {
     font-size: 18px !important;
   }

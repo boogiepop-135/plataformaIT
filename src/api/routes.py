@@ -176,12 +176,40 @@ def create_calendar_event():
     try:
         data = request.get_json()
         
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+            
+        if not data.get('title'):
+            return jsonify({"error": "Title is required"}), 400
+            
+        if not data.get('start_date'):
+            return jsonify({"error": "Start date is required"}), 400
+        
+        # Parse dates with better error handling
+        try:
+            start_date_str = data.get('start_date')
+            if 'T' not in start_date_str:
+                start_date_str += 'T00:00:00'
+            start_date = datetime.fromisoformat(start_date_str.replace('Z', '+00:00'))
+        except (ValueError, TypeError) as e:
+            return jsonify({"error": f"Invalid start_date format: {str(e)}"}), 400
+        
+        end_date = None
+        if data.get('end_date'):
+            try:
+                end_date_str = data.get('end_date')
+                if 'T' not in end_date_str:
+                    end_date_str += 'T23:59:59'
+                end_date = datetime.fromisoformat(end_date_str.replace('Z', '+00:00'))
+            except (ValueError, TypeError) as e:
+                return jsonify({"error": f"Invalid end_date format: {str(e)}"}), 400
+        
         new_event = CalendarEvent(
             title=data.get('title'),
             description=data.get('description', ''),
             event_type=data.get('event_type', 'other'),
-            start_date=datetime.fromisoformat(data.get('start_date')),
-            end_date=datetime.fromisoformat(data.get('end_date')) if data.get('end_date') else None,
+            start_date=start_date,
+            end_date=end_date,
             all_day=data.get('all_day', False),
             location=data.get('location'),
             user_id=data.get('user_id')
@@ -193,6 +221,9 @@ def create_calendar_event():
         return jsonify(new_event.serialize()), 201
     except Exception as e:
         db.session.rollback()
+        print(f"Error creating calendar event: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 @api.route('/calendar-events/<int:event_id>', methods=['PUT'])

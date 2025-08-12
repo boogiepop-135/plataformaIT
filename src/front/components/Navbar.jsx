@@ -10,8 +10,8 @@ export const Navbar = () => {
 					<span className="navbar-brand mb-0 h1">Plataforma IT</span>
 				</Link>
 
-				<button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" style={{border: 'none'}}>
-					<i className="fas fa-bars" style={{color: 'white', fontSize: '18px'}}></i>
+				<button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" style={{ border: 'none' }}>
+					<i className="fas fa-bars" style={{ color: 'white', fontSize: '18px' }}></i>
 				</button>
 
 				<div className="collapse navbar-collapse" id="navbarNav">
