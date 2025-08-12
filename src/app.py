@@ -71,9 +71,46 @@ def init_database():
                 print(f"📊 Tables after creation: {new_tables}")
             else:
                 print(f"✅ Database already has {len(tables)} tables")
+                # Check if we need to add new columns
+                update_database_schema()
                 
     except Exception as e:
         print(f"❌ Error initializing database: {e}")
+        import traceback
+        traceback.print_exc()
+
+def update_database_schema():
+    """Update database schema to add new columns if they don't exist"""
+    try:
+        from sqlalchemy import inspect, text
+        inspector = inspect(db.engine)
+        
+        # Check if calendar_event table exists
+        if 'calendar_event' in inspector.get_table_names():
+            columns = [col['name'] for col in inspector.get_columns('calendar_event')]
+            print(f"🔍 Calendar event columns: {columns}")
+            
+            # List of new columns to add
+            new_columns = [
+                ('equipment', 'VARCHAR(200)'),
+                ('branch', 'VARCHAR(200)'),
+                ('maintenance_type', 'VARCHAR(100)'),
+                ('recurrence_id', 'VARCHAR(100)'),
+                ('is_recurring', 'BOOLEAN DEFAULT 0'),
+                ('recurrence_pattern', 'VARCHAR(50)')
+            ]
+            
+            for column_name, column_type in new_columns:
+                if column_name not in columns:
+                    try:
+                        # Add column to table
+                        db.engine.execute(text(f'ALTER TABLE calendar_event ADD COLUMN {column_name} {column_type}'))
+                        print(f"✅ Added column {column_name} to calendar_event table")
+                    except Exception as e:
+                        print(f"⚠️ Could not add column {column_name}: {e}")
+                        
+    except Exception as e:
+        print(f"❌ Error updating database schema: {e}")
         import traceback
         traceback.print_exc()
 

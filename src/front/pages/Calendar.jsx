@@ -20,7 +20,11 @@ export const Calendar = () => {
         is_recurring: false,
         recurrence_type: "none",
         recurrence_interval: 1,
-        recurrence_end_date: ""
+        recurrence_end_date: "",
+        // Campos de mantenimiento
+        equipment: "",
+        branch: "",
+        maintenance_type: ""
     });
 
     const eventTypes = [
@@ -37,6 +41,27 @@ export const Calendar = () => {
         { value: "biweekly", label: "Cada 2 semanas" },
         { value: "monthly", label: "Mensualmente" },
         { value: "custom_days", label: "Cada X días" }
+    ];
+
+    const maintenanceTypes = [
+        { value: "preventivo", label: "Preventivo" },
+        { value: "correctivo", label: "Correctivo" },
+        { value: "predictivo", label: "Predictivo" },
+        { value: "instalacion", label: "Instalación" },
+        { value: "actualizacion", label: "Actualización" },
+        { value: "inspeccion", label: "Inspección" },
+        { value: "limpieza", label: "Limpieza" },
+        { value: "reparacion", label: "Reparación" }
+    ];
+
+    const branches = [
+        { value: "matriz", label: "Matriz" },
+        { value: "sucursal_norte", label: "Sucursal Norte" },
+        { value: "sucursal_sur", label: "Sucursal Sur" },
+        { value: "sucursal_este", label: "Sucursal Este" },
+        { value: "sucursal_oeste", label: "Sucursal Oeste" },
+        { value: "almacen", label: "Almacén" },
+        { value: "oficina_admin", label: "Oficina Administrativa" }
     ];
 
     const monthNames = [
@@ -97,7 +122,7 @@ export const Calendar = () => {
             }
 
             // Generate recurring events if needed
-            if (eventData.is_recurring && eventData.recurrence_type !== "none") {
+            if (eventData.is_recurring && eventData.recurrence_type !== "none" && !editingEvent) {
                 const recurringEvents = generateRecurringEvents(eventData);
 
                 // Save all recurring events
@@ -110,8 +135,24 @@ export const Calendar = () => {
                         body: JSON.stringify(event),
                     });
                 }
+            } else if (editingEvent && editingEvent.editChoice) {
+                // Handle recurring event editing
+                const response = await fetch(`${BACKEND_URL}/api/calendar-events/${editingEvent.id}/update-recurring`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        ...eventData,
+                        update_all: editingEvent.editChoice === 'all'
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error("Error updating recurring event");
+                }
             } else {
-                // Save single event
+                // Save single event (create or update)
                 const response = await fetch(url, {
                     method,
                     headers: {
@@ -149,6 +190,9 @@ export const Calendar = () => {
             new Date(baseEvent.recurrence_end_date) :
             new Date(startDate.getTime() + (365 * 24 * 60 * 60 * 1000)); // 1 year default
 
+        // Generate unique recurrence ID
+        const recurrenceId = `rec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
         let currentDate = new Date(startDate);
         let interval = baseEvent.recurrence_interval || 1;
 
@@ -159,7 +203,9 @@ export const Calendar = () => {
                 end_date: baseEvent.end_date ?
                     new Date(currentDate.getTime() + (new Date(baseEvent.end_date) - new Date(baseEvent.start_date))).toISOString() :
                     currentDate.toISOString(),
-                is_recurring: false, // Individual instances are not recurring
+                is_recurring: true,
+                recurrence_id: recurrenceId,
+                recurrence_pattern: baseEvent.recurrence_type,
                 title: `${baseEvent.title} ${baseEvent.recurrence_type !== "none" ? "(Recurrente)" : ""}`
             };
 
@@ -211,12 +257,25 @@ export const Calendar = () => {
             is_recurring: false,
             recurrence_type: "none",
             recurrence_interval: 1,
-            recurrence_end_date: ""
+            recurrence_end_date: "",
+            equipment: "",
+            branch: "",
+            maintenance_type: ""
         });
     };
 
-    const handleEditEvent = (event) => {
-        setEditingEvent(event);
+    const handleEditEvent = async (event) => {
+        // Check if it's a recurring event
+        if (event.is_recurring && event.recurrence_id) {
+            const editChoice = await showRecurringEditModal(event);
+            if (!editChoice) return;
+
+            // Store the edit choice for later use in saveEvent
+            setEditingEvent({...event, editChoice});
+        } else {
+            setEditingEvent(event);
+        }
+
         setNewEvent({
             title: event.title,
             description: event.description,
@@ -228,12 +287,15 @@ export const Calendar = () => {
             is_recurring: event.is_recurring || false,
             recurrence_type: event.recurrence_type || "none",
             recurrence_interval: event.recurrence_interval || 1,
-            recurrence_end_date: event.recurrence_end_date ? event.recurrence_end_date.split('T')[0] : ""
+            recurrence_end_date: event.recurrence_end_date ? event.recurrence_end_date.split('T')[0] : "",
+            equipment: event.equipment || "",
+            branch: event.branch || "",
+            maintenance_type: event.maintenance_type || ""
         });
         setShowEventModal(true);
     };
 
-    const handleDeleteEvent = async (eventId) => {
+    const handleDeleteEvent = async (event) => {
         // Check authentication before deleting
         const isAuthenticated = await authManager.checkAuthForAction("eliminar este evento");
 
@@ -241,23 +303,157 @@ export const Calendar = () => {
             return;
         }
 
-        if (confirm("¿Estás seguro de que quieres eliminar este evento?")) {
+        // Check if it's a recurring event
+        if (event.is_recurring && event.recurrence_id) {
+            const deleteChoice = await showRecurringDeleteModal(event);
+            if (!deleteChoice) return;
+
             try {
-                const response = await fetch(`${BACKEND_URL}/api/calendar-events/${eventId}`, {
+                const response = await fetch(`${BACKEND_URL}/api/calendar-events/${event.id}/delete-recurring`, {
                     method: "DELETE",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        delete_all: deleteChoice === 'all'
+                    })
                 });
 
                 if (response.ok) {
+                    const result = await response.json();
                     loadEvents();
-                    authManager.showNotification("Evento eliminado correctamente", "success");
+                    authManager.showNotification(result.message, "success");
                 } else {
-                    throw new Error("Error deleting event");
+                    throw new Error("Error deleting recurring event");
                 }
             } catch (error) {
-                console.error("Error deleting event:", error);
+                console.error("Error deleting recurring event:", error);
                 authManager.showNotification("Error al eliminar el evento", "danger");
             }
+        } else {
+            // Regular single event deletion
+            if (confirm("¿Estás seguro de que quieres eliminar este evento?")) {
+                try {
+                    const response = await fetch(`${BACKEND_URL}/api/calendar-events/${event.id}`, {
+                        method: "DELETE",
+                    });
+
+                    if (response.ok) {
+                        loadEvents();
+                        authManager.showNotification("Evento eliminado correctamente", "success");
+                    } else {
+                        throw new Error("Error deleting event");
+                    }
+                } catch (error) {
+                    console.error("Error deleting event:", error);
+                    authManager.showNotification("Error al eliminar el evento", "danger");
+                }
+            }
         }
+    };
+
+    const showRecurringDeleteModal = (event) => {
+        return new Promise((resolve) => {
+            const modal = document.createElement('div');
+            modal.className = 'modal fade show';
+            modal.style.display = 'block';
+            modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+            
+            modal.innerHTML = `
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="fas fa-trash-alt text-danger me-2"></i>
+                                Eliminar Evento Recurrente
+                            </h5>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-3">Este evento es parte de una serie recurrente.</p>
+                            <p><strong>¿Qué deseas eliminar?</strong></p>
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-outline-warning" data-choice="single">
+                                    <i class="fas fa-calendar-minus me-2"></i>
+                                    Solo este evento
+                                </button>
+                                <button type="button" class="btn btn-outline-danger" data-choice="all">
+                                    <i class="fas fa-calendar-times me-2"></i>
+                                    Toda la serie de eventos
+                                </button>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-choice="cancel">
+                                <i class="fas fa-times me-1"></i>
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            modal.addEventListener('click', (e) => {
+                const choice = e.target.getAttribute('data-choice');
+                if (choice) {
+                    document.body.removeChild(modal);
+                    resolve(choice === 'cancel' ? null : choice);
+                }
+            });
+            
+            document.body.appendChild(modal);
+        });
+    };
+
+    const showRecurringEditModal = (event) => {
+        return new Promise((resolve) => {
+            const modal = document.createElement('div');
+            modal.className = 'modal fade show';
+            modal.style.display = 'block';
+            modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+            
+            modal.innerHTML = `
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="fas fa-edit text-primary me-2"></i>
+                                Editar Evento Recurrente
+                            </h5>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-3">Este evento es parte de una serie recurrente.</p>
+                            <p><strong>¿Qué deseas editar?</strong></p>
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-outline-info" data-choice="single">
+                                    <i class="fas fa-calendar-check me-2"></i>
+                                    Solo este evento
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" data-choice="all">
+                                    <i class="fas fa-calendar-alt me-2"></i>
+                                    Toda la serie de eventos
+                                </button>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-choice="cancel">
+                                <i class="fas fa-times me-1"></i>
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            modal.addEventListener('click', (e) => {
+                const choice = e.target.getAttribute('data-choice');
+                if (choice) {
+                    document.body.removeChild(modal);
+                    resolve(choice === 'cancel' ? null : choice);
+                }
+            });
+            
+            document.body.appendChild(modal);
+        });
     };
 
     const getDaysInMonth = (date) => {
@@ -601,6 +797,62 @@ export const Calendar = () => {
                                         />
                                     </div>
 
+                                    {/* Maintenance Fields - Show only for maintenance type events */}
+                                    {newEvent.event_type === "maintenance" && (
+                                        <div className="card mb-3" style={{ backgroundColor: "var(--background-light)", border: "1px solid var(--primary-color)" }}>
+                                            <div className="card-header bg-primary text-white">
+                                                <h6 className="card-title mb-0">
+                                                    <i className="fas fa-tools me-2"></i>
+                                                    Información de Mantenimiento
+                                                </h6>
+                                            </div>
+                                            <div className="card-body">
+                                                <div className="row">
+                                                    <div className="col-md-6 mb-3">
+                                                        <label className="form-label">Equipo</label>
+                                                        <input
+                                                            type="text"
+                                                            className="form-control"
+                                                            value={newEvent.equipment}
+                                                            onChange={(e) => setNewEvent({ ...newEvent, equipment: e.target.value })}
+                                                            placeholder="Nombre del equipo"
+                                                        />
+                                                    </div>
+                                                    <div className="col-md-6 mb-3">
+                                                        <label className="form-label">Sucursal</label>
+                                                        <select
+                                                            className="form-select"
+                                                            value={newEvent.branch}
+                                                            onChange={(e) => setNewEvent({ ...newEvent, branch: e.target.value })}
+                                                        >
+                                                            <option value="">Seleccionar sucursal</option>
+                                                            {branches.map(branch => (
+                                                                <option key={branch.value} value={branch.value}>
+                                                                    {branch.label}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <div className="col-12 mb-3">
+                                                        <label className="form-label">Tipo de Mantenimiento</label>
+                                                        <select
+                                                            className="form-select"
+                                                            value={newEvent.maintenance_type}
+                                                            onChange={(e) => setNewEvent({ ...newEvent, maintenance_type: e.target.value })}
+                                                        >
+                                                            <option value="">Seleccionar tipo</option>
+                                                            {maintenanceTypes.map(type => (
+                                                                <option key={type.value} value={type.value}>
+                                                                    {type.label}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* Recurrence Section */}
                                     <div className="mb-3">
                                         <div className="form-check">
@@ -724,7 +976,7 @@ export const Calendar = () => {
                                     <button
                                         type="button"
                                         className="btn btn-danger me-auto"
-                                        onClick={() => handleDeleteEvent(editingEvent.id)}
+                                        onClick={() => handleDeleteEvent(editingEvent)}
                                     >
                                         <i className="fas fa-trash me-1"></i>Eliminar
                                     </button>

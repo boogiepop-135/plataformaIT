@@ -212,7 +212,13 @@ def create_calendar_event():
             end_date=end_date,
             all_day=data.get('all_day', False),
             location=data.get('location'),
-            user_id=data.get('user_id')
+            user_id=data.get('user_id'),
+            equipment=data.get('equipment'),
+            branch=data.get('branch'),
+            maintenance_type=data.get('maintenance_type'),
+            recurrence_id=data.get('recurrence_id'),
+            is_recurring=data.get('is_recurring', False),
+            recurrence_pattern=data.get('recurrence_pattern')
         )
         
         db.session.add(new_event)
@@ -246,6 +252,12 @@ def update_calendar_event(event_id):
             event.all_day = data['all_day']
         if 'location' in data:
             event.location = data['location']
+        if 'equipment' in data:
+            event.equipment = data['equipment']
+        if 'branch' in data:
+            event.branch = data['branch']
+        if 'maintenance_type' in data:
+            event.maintenance_type = data['maintenance_type']
         
         event.updated_at = datetime.utcnow()
         db.session.commit()
@@ -262,6 +274,92 @@ def delete_calendar_event(event_id):
         db.session.delete(event)
         db.session.commit()
         return jsonify({"message": "Event deleted successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+# ENDPOINTS PARA EVENTOS RECURRENTES
+@api.route('/calendar-events/<int:event_id>/update-recurring', methods=['PUT'])
+def update_recurring_events(event_id):
+    try:
+        event = CalendarEvent.query.get_or_404(event_id)
+        data = request.get_json()
+        
+        update_all = data.get('update_all', False)
+        
+        if update_all and event.recurrence_id:
+            # Actualizar todos los eventos con el mismo recurrence_id
+            events_to_update = CalendarEvent.query.filter_by(recurrence_id=event.recurrence_id).all()
+            
+            for recurring_event in events_to_update:
+                if 'title' in data:
+                    recurring_event.title = data['title']
+                if 'description' in data:
+                    recurring_event.description = data['description']
+                if 'event_type' in data:
+                    recurring_event.event_type = data['event_type']
+                if 'location' in data:
+                    recurring_event.location = data['location']
+                if 'equipment' in data:
+                    recurring_event.equipment = data['equipment']
+                if 'branch' in data:
+                    recurring_event.branch = data['branch']
+                if 'maintenance_type' in data:
+                    recurring_event.maintenance_type = data['maintenance_type']
+                
+                recurring_event.updated_at = datetime.utcnow()
+            
+            db.session.commit()
+            return jsonify({"message": f"Updated {len(events_to_update)} recurring events"}), 200
+        else:
+            # Actualizar solo este evento
+            if 'title' in data:
+                event.title = data['title']
+            if 'description' in data:
+                event.description = data['description']
+            if 'event_type' in data:
+                event.event_type = data['event_type']
+            if 'location' in data:
+                event.location = data['location']
+            if 'equipment' in data:
+                event.equipment = data['equipment']
+            if 'branch' in data:
+                event.branch = data['branch']
+            if 'maintenance_type' in data:
+                event.maintenance_type = data['maintenance_type']
+            
+            event.updated_at = datetime.utcnow()
+            db.session.commit()
+            return jsonify(event.serialize()), 200
+            
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@api.route('/calendar-events/<int:event_id>/delete-recurring', methods=['DELETE'])
+def delete_recurring_events(event_id):
+    try:
+        event = CalendarEvent.query.get_or_404(event_id)
+        data = request.get_json()
+        
+        delete_all = data.get('delete_all', False)
+        
+        if delete_all and event.recurrence_id:
+            # Eliminar todos los eventos con el mismo recurrence_id
+            events_to_delete = CalendarEvent.query.filter_by(recurrence_id=event.recurrence_id).all()
+            deleted_count = len(events_to_delete)
+            
+            for recurring_event in events_to_delete:
+                db.session.delete(recurring_event)
+            
+            db.session.commit()
+            return jsonify({"message": f"Deleted {deleted_count} recurring events"}), 200
+        else:
+            # Eliminar solo este evento
+            db.session.delete(event)
+            db.session.commit()
+            return jsonify({"message": "Event deleted successfully"}), 200
+            
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500

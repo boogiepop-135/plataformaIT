@@ -86,6 +86,16 @@ class CalendarEvent(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     
+    # Campos para mantenimientos
+    equipment = db.Column(db.String(200), nullable=True)  # Nombre del equipo
+    branch = db.Column(db.String(200), nullable=True)     # Sucursal
+    maintenance_type = db.Column(db.String(100), nullable=True)  # Tipo de mantenimiento
+    
+    # Campos para eventos recurrentes
+    recurrence_id = db.Column(db.String(100), nullable=True)  # ID para agrupar eventos recurrentes
+    is_recurring = db.Column(db.Boolean(), default=False)
+    recurrence_pattern = db.Column(db.String(50), nullable=True)  # weekly, biweekly, monthly, custom
+    
     user = db.relationship("User", backref="events")
 
     def serialize(self):
@@ -101,4 +111,10 @@ class CalendarEvent(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "user_id": self.user_id,
+            "equipment": self.equipment,
+            "branch": self.branch,
+            "maintenance_type": self.maintenance_type,
+            "recurrence_id": self.recurrence_id,
+            "is_recurring": self.is_recurring,
+            "recurrence_pattern": self.recurrence_pattern,
         }
