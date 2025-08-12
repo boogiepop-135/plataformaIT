@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import BACKEND_URL from "../config/backend.js";
+import authManager from "../utils/auth.js";
 
 export const KanbanBoard = () => {
     const [tasks, setTasks] = useState([]);
@@ -44,6 +45,15 @@ export const KanbanBoard = () => {
     };
 
     const handleSaveTask = async () => {
+        // Check authentication before saving
+        const isAuthenticated = await authManager.checkAuthForAction(
+            editingTask ? "editar esta tarea" : "crear una nueva tarea"
+        );
+        
+        if (!isAuthenticated) {
+            return;
+        }
+
         try {
             const url = editingTask
                 ? `${BACKEND_URL}/api/tasks/${editingTask.id}`

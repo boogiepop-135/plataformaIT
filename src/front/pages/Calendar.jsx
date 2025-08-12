@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import BACKEND_URL from "../config/backend.js";
+import authManager from "../utils/auth.js";
 
 export const Calendar = () => {
     const [events, setEvents] = useState([]);
@@ -15,7 +16,11 @@ export const Calendar = () => {
         start_date: "",
         end_date: "",
         all_day: false,
-        location: ""
+        location: "",
+        is_recurring: false,
+        recurrence_type: "none",
+        recurrence_interval: 1,
+        recurrence_end_date: ""
     });
 
     const eventTypes = [
@@ -23,6 +28,15 @@ export const Calendar = () => {
         { value: "maintenance", label: "Mantenimiento", color: "warning", icon: "fas fa-tools" },
         { value: "meeting", label: "Reunión", color: "info", icon: "fas fa-users" },
         { value: "other", label: "Otro", color: "secondary", icon: "fas fa-calendar" }
+    ];
+
+    const recurrenceTypes = [
+        { value: "none", label: "No repetir" },
+        { value: "daily", label: "Diariamente" },
+        { value: "weekly", label: "Semanalmente" },
+        { value: "biweekly", label: "Cada 2 semanas" },
+        { value: "monthly", label: "Mensualmente" },
+        { value: "custom_days", label: "Cada X días" }
     ];
 
     const monthNames = [
@@ -49,6 +63,15 @@ export const Calendar = () => {
     };
 
     const handleSaveEvent = async () => {
+        // Check authentication before saving
+        const isAuthenticated = await authManager.checkAuthForAction(
+            editingEvent ? "editar este evento" : "crear un nuevo evento"
+        );
+        
+        if (!isAuthenticated) {
+            return;
+        }
+
         try {
             const url = editingEvent
                 ? `${BACKEND_URL}/api/calendar-events/${editingEvent.id}`
@@ -73,32 +96,123 @@ export const Calendar = () => {
                 }
             }
 
-            const response = await fetch(url, {
-                method,
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(eventData),
-            });
-
-            if (response.ok) {
-                loadEvents();
-                setShowEventModal(false);
-                setEditingEvent(null);
-                setSelectedDate(null);
-                setNewEvent({
-                    title: "",
-                    description: "",
-                    event_type: "other",
-                    start_date: "",
-                    end_date: "",
-                    all_day: false,
-                    location: ""
+            // Generate recurring events if needed
+            if (eventData.is_recurring && eventData.recurrence_type !== "none") {
+                const recurringEvents = generateRecurringEvents(eventData);
+                
+                // Save all recurring events
+                for (const event of recurringEvents) {
+                    await fetch(`${BACKEND_URL}/api/calendar-events`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(event),
+                    });
+                }
+            } else {
+                // Save single event
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(eventData),
                 });
+
+                if (!response.ok) {
+                    throw new Error("Error saving event");
+                }
             }
+
+            loadEvents();
+            setShowEventModal(false);
+            setEditingEvent(null);
+            setSelectedDate(null);
+            resetEventForm();
+            
+            authManager.showNotification(
+                editingEvent ? "Evento actualizado correctamente" : "Evento creado correctamente",
+                "success"
+            );
+
         } catch (error) {
             console.error("Error saving event:", error);
+            authManager.showNotification("Error al guardar el evento", "danger");
         }
+    };
+
+    const generateRecurringEvents = (baseEvent) => {
+        const events = [];
+        const startDate = new Date(baseEvent.start_date);
+        const endDate = baseEvent.recurrence_end_date ? 
+            new Date(baseEvent.recurrence_end_date) : 
+            new Date(startDate.getTime() + (365 * 24 * 60 * 60 * 1000)); // 1 year default
+
+        let currentDate = new Date(startDate);
+        let interval = baseEvent.recurrence_interval || 1;
+
+        while (currentDate <= endDate) {
+            const event = {
+                ...baseEvent,
+                start_date: currentDate.toISOString(),
+                end_date: baseEvent.end_date ? 
+                    new Date(currentDate.getTime() + (new Date(baseEvent.end_date) - new Date(baseEvent.start_date))).toISOString() :
+                    currentDate.toISOString(),
+                is_recurring: false, // Individual instances are not recurring
+                title: `${baseEvent.title} ${baseEvent.recurrence_type !== "none" ? "(Recurrente)" : ""}`
+            };
+            
+            events.push(event);
+
+            // Calculate next occurrence
+            switch (baseEvent.recurrence_type) {
+                case "daily":
+                    currentDate.setDate(currentDate.getDate() + interval);
+                    break;
+                case "weekly":
+                    currentDate.setDate(currentDate.getDate() + (7 * interval));
+                    break;
+                case "biweekly":
+                    currentDate.setDate(currentDate.getDate() + 14);
+                    break;
+                case "monthly":
+                    currentDate.setMonth(currentDate.getMonth() + interval);
+                    break;
+                case "custom_days":
+                    if (baseEvent.title.includes("25")) {
+                        currentDate.setDate(currentDate.getDate() + 25);
+                    } else {
+                        currentDate.setDate(currentDate.getDate() + interval);
+                    }
+                    break;
+                default:
+                    return events; // Stop if no valid recurrence type
+            }
+
+            // Safety check to prevent infinite loops
+            if (events.length > 100) {
+                break;
+            }
+        }
+
+        return events;
+    };
+
+    const resetEventForm = () => {
+        setNewEvent({
+            title: "",
+            description: "",
+            event_type: "other",
+            start_date: "",
+            end_date: "",
+            all_day: false,
+            location: "",
+            is_recurring: false,
+            recurrence_type: "none",
+            recurrence_interval: 1,
+            recurrence_end_date: ""
+        });
     };
 
     const handleEditEvent = (event) => {
@@ -110,12 +224,23 @@ export const Calendar = () => {
             start_date: event.start_date ? event.start_date.split('T')[0] : "",
             end_date: event.end_date ? event.end_date.split('T')[0] : "",
             all_day: event.all_day,
-            location: event.location || ""
+            location: event.location || "",
+            is_recurring: event.is_recurring || false,
+            recurrence_type: event.recurrence_type || "none",
+            recurrence_interval: event.recurrence_interval || 1,
+            recurrence_end_date: event.recurrence_end_date ? event.recurrence_end_date.split('T')[0] : ""
         });
         setShowEventModal(true);
     };
 
     const handleDeleteEvent = async (eventId) => {
+        // Check authentication before deleting
+        const isAuthenticated = await authManager.checkAuthForAction("eliminar este evento");
+        
+        if (!isAuthenticated) {
+            return;
+        }
+
         if (confirm("¿Estás seguro de que quieres eliminar este evento?")) {
             try {
                 const response = await fetch(`${BACKEND_URL}/api/calendar-events/${eventId}`, {
@@ -124,9 +249,13 @@ export const Calendar = () => {
 
                 if (response.ok) {
                     loadEvents();
+                    authManager.showNotification("Evento eliminado correctamente", "success");
+                } else {
+                    throw new Error("Error deleting event");
                 }
             } catch (error) {
                 console.error("Error deleting event:", error);
+                authManager.showNotification("Error al eliminar el evento", "danger");
             }
         }
     };
@@ -384,15 +513,7 @@ export const Calendar = () => {
                                         setShowEventModal(false);
                                         setEditingEvent(null);
                                         setSelectedDate(null);
-                                        setNewEvent({
-                                            title: "",
-                                            description: "",
-                                            event_type: "other",
-                                            start_date: "",
-                                            end_date: "",
-                                            all_day: false,
-                                            location: ""
-                                        });
+                                        resetEventForm();
                                     }}
                                 ></button>
                             </div>
@@ -469,6 +590,123 @@ export const Calendar = () => {
                                             </label>
                                         </div>
                                     </div>
+                                    <div className="mb-3">
+                                        <label className="form-label">Ubicación</label>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            value={newEvent.location}
+                                            onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
+                                            placeholder="Ubicación del evento"
+                                        />
+                                    </div>
+                                    
+                                    {/* Recurrence Section */}
+                                    <div className="mb-3">
+                                        <div className="form-check">
+                                            <input
+                                                className="form-check-input"
+                                                type="checkbox"
+                                                checked={newEvent.is_recurring}
+                                                onChange={(e) => setNewEvent({ ...newEvent, is_recurring: e.target.checked })}
+                                            />
+                                            <label className="form-check-label">
+                                                <i className="fas fa-repeat me-1"></i>
+                                                Evento recurrente
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    {newEvent.is_recurring && (
+                                        <div className="card mb-3" style={{ backgroundColor: "var(--background-light)" }}>
+                                            <div className="card-body">
+                                                <h6 className="card-title">
+                                                    <i className="fas fa-cog me-1"></i>
+                                                    Configuración de Recurrencia
+                                                </h6>
+                                                <div className="row">
+                                                    <div className="col-md-6">
+                                                        <div className="mb-3">
+                                                            <label className="form-label">Tipo de repetición</label>
+                                                            <select
+                                                                className="form-select"
+                                                                value={newEvent.recurrence_type}
+                                                                onChange={(e) => setNewEvent({ ...newEvent, recurrence_type: e.target.value })}
+                                                            >
+                                                                {recurrenceTypes.map(type => (
+                                                                    <option key={type.value} value={type.value}>
+                                                                        {type.label}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-md-6">
+                                                        {(newEvent.recurrence_type === "daily" || newEvent.recurrence_type === "custom_days") && (
+                                                            <div className="mb-3">
+                                                                <label className="form-label">
+                                                                    {newEvent.recurrence_type === "daily" ? "Cada X días" : "Cada X días (ej: 25)"}
+                                                                </label>
+                                                                <input
+                                                                    type="number"
+                                                                    className="form-control"
+                                                                    min="1"
+                                                                    max="365"
+                                                                    value={newEvent.recurrence_interval}
+                                                                    onChange={(e) => setNewEvent({ ...newEvent, recurrence_interval: parseInt(e.target.value) })}
+                                                                />
+                                                            </div>
+                                                        )}
+                                                        {newEvent.recurrence_type === "weekly" && (
+                                                            <div className="mb-3">
+                                                                <label className="form-label">Cada X semanas</label>
+                                                                <input
+                                                                    type="number"
+                                                                    className="form-control"
+                                                                    min="1"
+                                                                    max="52"
+                                                                    value={newEvent.recurrence_interval}
+                                                                    onChange={(e) => setNewEvent({ ...newEvent, recurrence_interval: parseInt(e.target.value) })}
+                                                                />
+                                                            </div>
+                                                        )}
+                                                        {newEvent.recurrence_type === "monthly" && (
+                                                            <div className="mb-3">
+                                                                <label className="form-label">Cada X meses</label>
+                                                                <input
+                                                                    type="number"
+                                                                    className="form-control"
+                                                                    min="1"
+                                                                    max="12"
+                                                                    value={newEvent.recurrence_interval}
+                                                                    onChange={(e) => setNewEvent({ ...newEvent, recurrence_interval: parseInt(e.target.value) })}
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="mb-3">
+                                                    <label className="form-label">Repetir hasta (opcional)</label>
+                                                    <input
+                                                        type="date"
+                                                        className="form-control"
+                                                        value={newEvent.recurrence_end_date}
+                                                        onChange={(e) => setNewEvent({ ...newEvent, recurrence_end_date: e.target.value })}
+                                                    />
+                                                    <div className="form-text">
+                                                        Si no se especifica, se repetirá por 1 año
+                                                    </div>
+                                                </div>
+                                                <div className="alert alert-info small">
+                                                    <i className="fas fa-info-circle me-1"></i>
+                                                    <strong>Ejemplos:</strong><br/>
+                                                    • Cada 25 días: Selecciona "Cada X días" y escribe 25<br/>
+                                                    • Cada semana: Selecciona "Semanalmente"<br/>
+                                                    • Una semana sí, otra no: Selecciona "Cada 2 semanas"
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                     <div className="mb-3">
                                         <label className="form-label">Ubicación</label>
                                         <input
