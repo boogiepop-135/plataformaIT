@@ -67,7 +67,7 @@ export const Calendar = () => {
         const isAuthenticated = await authManager.checkAuthForAction(
             editingEvent ? "editar este evento" : "crear un nuevo evento"
         );
-        
+
         if (!isAuthenticated) {
             return;
         }
@@ -99,7 +99,7 @@ export const Calendar = () => {
             // Generate recurring events if needed
             if (eventData.is_recurring && eventData.recurrence_type !== "none") {
                 const recurringEvents = generateRecurringEvents(eventData);
-                
+
                 // Save all recurring events
                 for (const event of recurringEvents) {
                     await fetch(`${BACKEND_URL}/api/calendar-events`, {
@@ -130,7 +130,7 @@ export const Calendar = () => {
             setEditingEvent(null);
             setSelectedDate(null);
             resetEventForm();
-            
+
             authManager.showNotification(
                 editingEvent ? "Evento actualizado correctamente" : "Evento creado correctamente",
                 "success"
@@ -145,8 +145,8 @@ export const Calendar = () => {
     const generateRecurringEvents = (baseEvent) => {
         const events = [];
         const startDate = new Date(baseEvent.start_date);
-        const endDate = baseEvent.recurrence_end_date ? 
-            new Date(baseEvent.recurrence_end_date) : 
+        const endDate = baseEvent.recurrence_end_date ?
+            new Date(baseEvent.recurrence_end_date) :
             new Date(startDate.getTime() + (365 * 24 * 60 * 60 * 1000)); // 1 year default
 
         let currentDate = new Date(startDate);
@@ -156,13 +156,13 @@ export const Calendar = () => {
             const event = {
                 ...baseEvent,
                 start_date: currentDate.toISOString(),
-                end_date: baseEvent.end_date ? 
+                end_date: baseEvent.end_date ?
                     new Date(currentDate.getTime() + (new Date(baseEvent.end_date) - new Date(baseEvent.start_date))).toISOString() :
                     currentDate.toISOString(),
                 is_recurring: false, // Individual instances are not recurring
                 title: `${baseEvent.title} ${baseEvent.recurrence_type !== "none" ? "(Recurrente)" : ""}`
             };
-            
+
             events.push(event);
 
             // Calculate next occurrence
@@ -236,7 +236,7 @@ export const Calendar = () => {
     const handleDeleteEvent = async (eventId) => {
         // Check authentication before deleting
         const isAuthenticated = await authManager.checkAuthForAction("eliminar este evento");
-        
+
         if (!isAuthenticated) {
             return;
         }
@@ -600,7 +600,7 @@ export const Calendar = () => {
                                             placeholder="Ubicación del evento"
                                         />
                                     </div>
-                                    
+
                                     {/* Recurrence Section */}
                                     <div className="mb-3">
                                         <div className="form-check">
@@ -699,9 +699,9 @@ export const Calendar = () => {
                                                 </div>
                                                 <div className="alert alert-info small">
                                                     <i className="fas fa-info-circle me-1"></i>
-                                                    <strong>Ejemplos:</strong><br/>
-                                                    • Cada 25 días: Selecciona "Cada X días" y escribe 25<br/>
-                                                    • Cada semana: Selecciona "Semanalmente"<br/>
+                                                    <strong>Ejemplos:</strong><br />
+                                                    • Cada 25 días: Selecciona "Cada X días" y escribe 25<br />
+                                                    • Cada semana: Selecciona "Semanalmente"<br />
                                                     • Una semana sí, otra no: Selecciona "Cada 2 semanas"
                                                 </div>
                                             </div>

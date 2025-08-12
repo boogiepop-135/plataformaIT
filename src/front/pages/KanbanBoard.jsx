@@ -49,7 +49,7 @@ export const KanbanBoard = () => {
         const isAuthenticated = await authManager.checkAuthForAction(
             editingTask ? "editar esta tarea" : "crear una nueva tarea"
         );
-        
+
         if (!isAuthenticated) {
             return;
         }
@@ -150,15 +150,20 @@ export const KanbanBoard = () => {
     };
 
     return (
-        <div className="container-fluid mt-4">
-            <div className="d-flex justify-content-between align-items-center mb-4">
-                <h1 className="h2">Tablero Kanban</h1>
-                <button
-                    className="btn btn-primary"
-                    onClick={() => setShowTaskModal(true)}
-                >
-                    <i className="fas fa-plus me-2"></i>Nueva Tarea
-                </button>
+        <div className="container-fluid">
+            <div className="page-header">
+                <div className="d-flex justify-content-between align-items-center">
+                    <h1 className="page-title">
+                        <i className="fas fa-columns"></i>
+                        Tablero Kanban
+                    </h1>
+                    <button
+                        className="btn btn-primary"
+                        onClick={() => setShowTaskModal(true)}
+                    >
+                        <i className="fas fa-plus me-2"></i>Nueva Tarea
+                    </button>
+                </div>
             </div>
 
             <div className="row">
