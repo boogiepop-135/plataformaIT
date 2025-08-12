@@ -49,6 +49,38 @@ setup_admin(app)
 print("🔍 Setting up commands...")
 setup_commands(app)
 
+# Initialize database tables automatically
+def init_database():
+    """Initialize database tables if they don't exist"""
+    try:
+        with app.app_context():
+            from sqlalchemy import inspect
+            inspector = inspect(db.engine)
+            tables = inspector.get_table_names()
+            
+            print(f"🔍 Existing tables: {tables}")
+            
+            if not tables or 'calendar_event' not in tables:
+                print("🚀 Creating database tables...")
+                db.create_all()
+                print("✅ Database tables created successfully")
+                
+                # Verify tables were created
+                inspector = inspect(db.engine)
+                new_tables = inspector.get_table_names()
+                print(f"📊 Tables after creation: {new_tables}")
+            else:
+                print(f"✅ Database already has {len(tables)} tables")
+                
+    except Exception as e:
+        print(f"❌ Error initializing database: {e}")
+        import traceback
+        traceback.print_exc()
+
+# Initialize database on startup
+print("🗄️ Initializing database tables...")
+init_database()
+
 # Add all endpoints form the API with a "api" prefix
 print("🔍 Registering API blueprint...")
 app.register_blueprint(api, url_prefix='/api')

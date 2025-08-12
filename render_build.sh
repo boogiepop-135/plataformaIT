@@ -24,10 +24,5 @@ else
     echo "⚠️  No se encontró directorio dist"
 fi
 
-# Inicializar base de datos
-echo "🗄️  Inicializando base de datos..."
-cd src
-python init_db.py
-cd ..
-
 echo "✅ Build completado exitosamente!"
+echo "🗄️ La base de datos se inicializará automáticamente al arrancar la app"
