@@ -164,8 +164,8 @@ export const Calendar = () => {
             setSelectedDate(null);
             resetEventForm();
 
-            alert(editingEvent 
-                ? "Evento actualizado correctamente" 
+            alert(editingEvent
+                ? "Evento actualizado correctamente"
                 : "Evento creado correctamente");
 
         } catch (error) {
@@ -262,7 +262,7 @@ export const Calendar = () => {
             if (!editChoice) return;
 
             // Store the edit choice for later use in saveEvent
-            setEditingEvent({...event, editChoice});
+            setEditingEvent({ ...event, editChoice });
         } else {
             setEditingEvent(event);
         }
@@ -347,7 +347,7 @@ export const Calendar = () => {
             modal.className = 'modal fade show';
             modal.style.display = 'block';
             modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
-            
+
             modal.innerHTML = `
                 <div class="modal-dialog">
                     <div class="modal-content">
@@ -380,7 +380,7 @@ export const Calendar = () => {
                     </div>
                 </div>
             `;
-            
+
             modal.addEventListener('click', (e) => {
                 const choice = e.target.getAttribute('data-choice');
                 if (choice) {
@@ -388,7 +388,7 @@ export const Calendar = () => {
                     resolve(choice === 'cancel' ? null : choice);
                 }
             });
-            
+
             document.body.appendChild(modal);
         });
     };
@@ -399,7 +399,7 @@ export const Calendar = () => {
             modal.className = 'modal fade show';
             modal.style.display = 'block';
             modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
-            
+
             modal.innerHTML = `
                 <div class="modal-dialog">
                     <div class="modal-content">
@@ -432,7 +432,7 @@ export const Calendar = () => {
                     </div>
                 </div>
             `;
-            
+
             modal.addEventListener('click', (e) => {
                 const choice = e.target.getAttribute('data-choice');
                 if (choice) {
@@ -440,7 +440,7 @@ export const Calendar = () => {
                     resolve(choice === 'cancel' ? null : choice);
                 }
             });
-            
+
             document.body.appendChild(modal);
         });
     };

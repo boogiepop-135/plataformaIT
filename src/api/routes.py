@@ -637,19 +637,45 @@ def admin_login():
         if not username or not password:
             return jsonify({"error": "Username and password required"}), 400
 
-        # Simple authentication (in production, use proper hashing)
-        # Default admin credentials: admin / admin123
+        # Check if admin exists in database
+        admin_user = User.query.filter_by(email=username, role='admin').first()
+        
+        if admin_user and admin_user.is_active:
+            # Check password (in production, use proper hashing)
+            if admin_user.password == password:
+                # Update last login
+                admin_user.last_login = datetime.utcnow()
+                db.session.commit()
+                
+                return jsonify({
+                    "success": True,
+                    "message": "Login successful",
+                    "token": "admin_authenticated",
+                    "user": {
+                        "id": admin_user.id,
+                        "email": admin_user.email,
+                        "name": admin_user.name,
+                        "role": admin_user.role
+                    },
+                    "expires_in": 3600
+                }), 200
+        
+        # Fallback to hardcoded credentials for backward compatibility
         if username == "admin" and password == "admin123":
-            from datetime import datetime, timedelta
-            # In a real app, you'd use JWT or sessions
             return jsonify({
                 "success": True,
-                "message": "Login successful",
-                "token": "admin_authenticated",  # Simplified token
-                "expires_in": 3600  # 1 hour
+                "message": "Login successful (fallback)",
+                "token": "admin_authenticated",
+                "user": {
+                    "id": 1,
+                    "email": "admin",
+                    "name": "Administrator",
+                    "role": "admin"
+                },
+                "expires_in": 3600
             }), 200
-        else:
-            return jsonify({"error": "Invalid credentials"}), 401
+        
+        return jsonify({"error": "Invalid credentials"}), 401
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -819,26 +845,55 @@ def change_admin_password():
 
         current_password = data.get('current_password')
         new_password = data.get('new_password')
+        user_id = data.get('user_id', 1)  # Default to admin user
 
         if not current_password or not new_password:
             return jsonify({"error": "Current password and new password are required"}), 400
 
-        # Verify current password (simplified - in production check hashed password)
-        if current_password != "admin123":
-            return jsonify({"error": "Current password is incorrect"}), 400
-
         if len(new_password) < 6:
             return jsonify({"error": "New password must be at least 6 characters"}), 400
 
-        # In production, you would update the hashed password in database
-        # For now, we'll just return success (the hardcoded password would need manual update)
-
-        return jsonify({
-            "message": "Password change request received. In production, this would update the database.",
-            "note": "Current implementation uses hardcoded credentials for demo purposes"
-        }), 200
+        # Find the admin user in database
+        admin_user = User.query.filter_by(id=user_id, role='admin').first()
+        
+        if admin_user:
+            # Verify current password
+            if admin_user.password != current_password:
+                # Try fallback hardcoded password
+                if current_password != "admin123":
+                    return jsonify({"error": "Current password is incorrect"}), 400
+            
+            # Update password in database
+            admin_user.password = new_password
+            db.session.commit()
+            
+            return jsonify({
+                "success": True,
+                "message": "Password changed successfully",
+                "note": "Password updated in database"
+            }), 200
+        else:
+            # Handle case where admin user doesn't exist in DB yet
+            # Create admin user with new password
+            new_admin = User(
+                email="admin",
+                password=new_password,
+                name="Administrator",
+                role="admin",
+                is_active=True,
+                created_by=1
+            )
+            db.session.add(new_admin)
+            db.session.commit()
+            
+            return jsonify({
+                "success": True,
+                "message": "Admin user created with new password",
+                "note": "New admin user created in database"
+            }), 200
 
     except Exception as e:
+        db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
 

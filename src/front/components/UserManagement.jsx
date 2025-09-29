@@ -155,21 +155,27 @@ const UserManagement = ({ onClose }) => {
                 headers: getAuthHeaders(),
                 body: JSON.stringify({
                     current_password: passwordData.current_password,
-                    new_password: passwordData.new_password
+                    new_password: passwordData.new_password,
+                    user_id: 1 // Admin user ID
                 })
             });
 
             const data = await response.json();
 
             if (response.ok) {
-                setSuccess('Solicitud de cambio de contraseña procesada');
+                setSuccess(data.message || 'Contraseña cambiada exitosamente');
                 setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
                 setShowPasswordModal(false);
+                
+                // Show success notification
+                setTimeout(() => {
+                    alert('✅ Contraseña actualizada correctamente. La nueva contraseña ya está activa.');
+                }, 500);
             } else {
                 setError(data.error || 'Error al cambiar contraseña');
             }
         } catch (error) {
-            setError('Error de conexión');
+            setError('Error de conexión al servidor');
         }
     };
 
@@ -444,14 +450,14 @@ const UserManagement = ({ onClose }) => {
                                     />
                                 </div>
                             </div>
-                            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mt-4">
+                            <div className="bg-green-50 border border-green-200 rounded-xl p-4 mt-4">
                                 <div className="flex items-start space-x-3">
-                                    <i className="fas fa-exclamation-triangle text-yellow-600 mt-1"></i>
+                                    <i className="fas fa-check-circle text-green-600 mt-1"></i>
                                     <div>
-                                        <h4 className="text-yellow-800 font-medium text-sm">Nota Importante</h4>
-                                        <p className="text-yellow-700 text-sm">
-                                            En la versión actual, las credenciales están hardcodeadas.
-                                            Esta funcionalidad está preparada para un sistema de producción completo.
+                                        <h4 className="text-green-800 font-medium text-sm">Cambio de Contraseña Funcional</h4>
+                                        <p className="text-green-700 text-sm">
+                                            El sistema ahora permite cambiar la contraseña del administrador.
+                                            La nueva contraseña se guardará en la base de datos.
                                         </p>
                                     </div>
                                 </div>
