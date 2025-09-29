@@ -4,6 +4,7 @@ import './index.css'  // Global styles for your application
 import { RouterProvider } from "react-router-dom";  // Import RouterProvider to use the router
 import { router } from "./routes";  // Import the router configuration
 import { StoreProvider } from './hooks/useGlobalReducer';  // Import the StoreProvider for global state management
+import { AuthProvider } from './hooks/useAuth.jsx';  // Import the AuthProvider for authentication
 import { BackendURL } from './components/BackendURL';
 import BACKEND_URL from './config/backend.js';
 
@@ -17,12 +18,15 @@ const Main = () => {
     );
     return (
         <React.StrictMode>
-            {/* Provide global state to all components */}
-            <StoreProvider>
-                {/* Set up routing for the application */}
-                <RouterProvider router={router}>
-                </RouterProvider>
-            </StoreProvider>
+            {/* Provide authentication context to all components */}
+            <AuthProvider>
+                {/* Provide global state to all components */}
+                <StoreProvider>
+                    {/* Set up routing for the application */}
+                    <RouterProvider router={router}>
+                    </RouterProvider>
+                </StoreProvider>
+            </AuthProvider>
         </React.StrictMode>
     );
 }

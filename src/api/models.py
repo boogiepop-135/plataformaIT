@@ -170,3 +170,21 @@ class Matrix(db.Model):
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "user_id": self.user_id,
         }
+
+
+class Admin(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    is_active = db.Column(db.Boolean(), default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_login = db.Column(db.DateTime, nullable=True)
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "is_active": self.is_active,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "last_login": self.last_login.isoformat() if self.last_login else None,
+        }

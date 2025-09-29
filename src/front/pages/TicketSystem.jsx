@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
 import BACKEND_URL from "../config/backend.js";
+import { useAuth } from "../hooks/useAuth.jsx";
+import AuthProtectedAction from "../components/AuthProtectedAction.jsx";
 
 export const TicketSystem = () => {
+    const { isAuthenticated, getAuthHeaders } = useAuth();
     const [tickets, setTickets] = useState([]);
     const [showTicketModal, setShowTicketModal] = useState(false);
     const [editingTicket, setEditingTicket] = useState(null);
@@ -53,11 +56,14 @@ export const TicketSystem = () => {
 
             const method = editingTicket ? "PUT" : "POST";
 
+            // Para editar tickets, se requiere autenticación
+            const headers = editingTicket
+                ? getAuthHeaders()
+                : { "Content-Type": "application/json" };
+
             const response = await fetch(url, {
                 method,
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers,
                 body: JSON.stringify(newTicket),
             });
 
@@ -97,10 +103,13 @@ export const TicketSystem = () => {
             try {
                 const response = await fetch(`${BACKEND_URL}/api/tickets/${ticketId}`, {
                     method: "DELETE",
+                    headers: getAuthHeaders(), // Requiere autenticación para eliminar
                 });
 
                 if (response.ok) {
                     loadTickets();
+                } else if (response.status === 401) {
+                    alert("Se requiere autenticación administrativa para eliminar tickets.");
                 }
             } catch (error) {
                 console.error("Error deleting ticket:", error);
@@ -263,19 +272,39 @@ export const TicketSystem = () => {
                                     </small>
                                 </div>
                             </div>
-                            <div className="card-footer">
-                                <button
-                                    className="btn btn-sm btn-outline-primary me-2"
-                                    onClick={() => handleEditTicket(ticket)}
-                                >
-                                    <i className="fas fa-edit me-1"></i>Editar
-                                </button>
-                                <button
-                                    className="btn btn-sm btn-outline-danger"
-                                    onClick={() => handleDeleteTicket(ticket.id)}
-                                >
-                                    <i className="fas fa-trash me-1"></i>Eliminar
-                                </button>
+                            <div className="card-footer d-flex justify-content-between align-items-center">
+                                <div>
+                                    <AuthProtectedAction
+                                        loginButtonText="Editar"
+                                        loginButtonClass="btn btn-sm btn-outline-primary me-2"
+                                    >
+                                        <button
+                                            className="btn btn-sm btn-outline-primary me-2"
+                                            onClick={() => handleEditTicket(ticket)}
+                                        >
+                                            <i className="fas fa-edit me-1"></i>Editar
+                                        </button>
+                                    </AuthProtectedAction>
+
+                                    <AuthProtectedAction
+                                        loginButtonText="Eliminar"
+                                        loginButtonClass="btn btn-sm btn-outline-danger"
+                                    >
+                                        <button
+                                            className="btn btn-sm btn-outline-danger"
+                                            onClick={() => handleDeleteTicket(ticket.id)}
+                                        >
+                                            <i className="fas fa-trash me-1"></i>Eliminar
+                                        </button>
+                                    </AuthProtectedAction>
+                                </div>
+
+                                {!isAuthenticated && (
+                                    <small className="text-muted">
+                                        <i className="fas fa-info-circle me-1"></i>
+                                        Se requiere acceso admin para editar/eliminar
+                                    </small>
+                                )}
                             </div>
                         </div>
                     </div>

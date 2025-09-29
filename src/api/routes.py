@@ -6,6 +6,7 @@ from api.models import db, User, Task, Ticket, CalendarEvent, Matrix
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
 from datetime import datetime
+from functools import wraps
 
 api = Blueprint('api', __name__)
 
@@ -16,6 +17,22 @@ CORS(api, origins=[
     "http://127.0.0.1:3000",
     "https://informaticait.up.railway.app"
 ])
+
+
+# Authentication decorator
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({"error": "Authentication required"}), 401
+
+        token = auth_header.split(' ')[1]
+        if token != "admin_authenticated":
+            return jsonify({"error": "Invalid authentication token"}), 401
+
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 @api.route('/hello', methods=['POST', 'GET'])
@@ -38,6 +55,7 @@ def get_tasks():
 
 
 @api.route('/tasks', methods=['POST'])
+@admin_required
 def create_task():
     try:
         data = request.get_json()
@@ -62,6 +80,7 @@ def create_task():
 
 
 @api.route('/tasks/<int:task_id>', methods=['PUT'])
+@admin_required
 def update_task(task_id):
     try:
         task = Task.query.get_or_404(task_id)
@@ -89,6 +108,7 @@ def update_task(task_id):
 
 
 @api.route('/tasks/<int:task_id>', methods=['DELETE'])
+@admin_required
 def delete_task(task_id):
     try:
         task = Task.query.get_or_404(task_id)
@@ -136,6 +156,7 @@ def create_ticket():
 
 
 @api.route('/tickets/<int:ticket_id>', methods=['PUT'])
+@admin_required
 def update_ticket(ticket_id):
     try:
         ticket = Ticket.query.get_or_404(ticket_id)
@@ -162,6 +183,7 @@ def update_ticket(ticket_id):
 
 
 @api.route('/tickets/<int:ticket_id>', methods=['DELETE'])
+@admin_required
 def delete_ticket(ticket_id):
     try:
         ticket = Ticket.query.get_or_404(ticket_id)
@@ -407,6 +429,7 @@ def get_matrices():
 
 
 @api.route('/matrices', methods=['POST'])
+@admin_required
 def create_matrix():
     try:
         data = request.get_json()
@@ -491,6 +514,7 @@ def get_matrix(matrix_id):
 
 
 @api.route('/matrices/<int:matrix_id>', methods=['PUT'])
+@admin_required
 def update_matrix(matrix_id):
     try:
         matrix = Matrix.query.get_or_404(matrix_id)
@@ -519,6 +543,7 @@ def update_matrix(matrix_id):
 
 
 @api.route('/matrices/<int:matrix_id>', methods=['DELETE'])
+@admin_required
 def delete_matrix(matrix_id):
     try:
         matrix = Matrix.query.get_or_404(matrix_id)
@@ -597,3 +622,56 @@ def get_matrix_templates():
     }
 
     return jsonify(templates), 200
+
+
+# AUTHENTICATION ROUTES
+
+@api.route('/auth/login', methods=['POST'])
+def admin_login():
+    """Admin login endpoint"""
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+
+        if not username or not password:
+            return jsonify({"error": "Username and password required"}), 400
+
+        # Simple authentication (in production, use proper hashing)
+        # Default admin credentials: admin / admin123
+        if username == "admin" and password == "admin123":
+            from datetime import datetime, timedelta
+            # In a real app, you'd use JWT or sessions
+            return jsonify({
+                "success": True,
+                "message": "Login successful",
+                "token": "admin_authenticated",  # Simplified token
+                "expires_in": 3600  # 1 hour
+            }), 200
+        else:
+            return jsonify({"error": "Invalid credentials"}), 401
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/auth/verify', methods=['POST'])
+def verify_admin():
+    """Verify admin token"""
+    try:
+        data = request.get_json()
+        token = data.get('token')
+
+        if token == "admin_authenticated":
+            return jsonify({"valid": True}), 200
+        else:
+            return jsonify({"valid": False}), 401
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/auth/logout', methods=['POST'])
+def admin_logout():
+    """Admin logout endpoint"""
+    return jsonify({"message": "Logged out successfully"}), 200
