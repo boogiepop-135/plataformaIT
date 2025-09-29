@@ -37,6 +37,11 @@ export const Navbar = () => {
 							</Link>
 						</li>
 						<li className="nav-item">
+							<Link to="/matrices" className="nav-link">
+								<i className="fas fa-th me-2"></i>Matrices
+							</Link>
+						</li>
+						<li className="nav-item">
 							<Link to="/demo" className="nav-link">
 								<i className="fas fa-flask me-2"></i>Demo
 							</Link>

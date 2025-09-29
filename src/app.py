@@ -5,6 +5,7 @@ import os
 from flask import Flask, request, jsonify, url_for, send_from_directory
 from flask_migrate import Migrate
 from flask_swagger import swagger
+from flask_cors import CORS
 from api.utils import APIException, generate_sitemap
 from api.models import db
 from api.routes import api
@@ -18,6 +19,16 @@ static_file_dir = os.path.join(os.path.dirname(
     os.path.realpath(__file__)), '../dist/')
 app = Flask(__name__)
 app.url_map.strict_slashes = False
+
+# Configure CORS
+CORS(app, origins=[
+    "http://localhost:3000",
+    "https://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://informaticait.up.railway.app"
+],
+    allow_headers=["Content-Type", "Authorization"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 
 # database condiguration
 db_url = os.getenv("DATABASE_URL")
@@ -50,6 +61,8 @@ print("🔍 Setting up commands...")
 setup_commands(app)
 
 # Initialize database tables automatically
+
+
 def init_database():
     """Initialize database tables if they don't exist"""
     try:
@@ -57,14 +70,14 @@ def init_database():
             from sqlalchemy import inspect
             inspector = inspect(db.engine)
             tables = inspector.get_table_names()
-            
+
             print(f"🔍 Existing tables: {tables}")
-            
+
             if not tables or 'calendar_event' not in tables:
                 print("🚀 Creating database tables...")
                 db.create_all()
                 print("✅ Database tables created successfully")
-                
+
                 # Verify tables were created
                 inspector = inspect(db.engine)
                 new_tables = inspector.get_table_names()
@@ -73,23 +86,25 @@ def init_database():
                 print(f"✅ Database already has {len(tables)} tables")
                 # Check if we need to add new columns
                 update_database_schema()
-                
+
     except Exception as e:
         print(f"❌ Error initializing database: {e}")
         import traceback
         traceback.print_exc()
+
 
 def update_database_schema():
     """Update database schema to add new columns if they don't exist"""
     try:
         from sqlalchemy import inspect, text
         inspector = inspect(db.engine)
-        
+
         # Check if calendar_event table exists
         if 'calendar_event' in inspector.get_table_names():
-            columns = [col['name'] for col in inspector.get_columns('calendar_event')]
+            columns = [col['name']
+                       for col in inspector.get_columns('calendar_event')]
             print(f"🔍 Calendar event columns: {columns}")
-            
+
             # List of new columns to add
             new_columns = [
                 ('equipment', 'VARCHAR(200)'),
@@ -99,20 +114,25 @@ def update_database_schema():
                 ('is_recurring', 'BOOLEAN DEFAULT 0'),
                 ('recurrence_pattern', 'VARCHAR(50)')
             ]
-            
+
             for column_name, column_type in new_columns:
                 if column_name not in columns:
                     try:
-                        # Add column to table
-                        db.engine.execute(text(f'ALTER TABLE calendar_event ADD COLUMN {column_name} {column_type}'))
-                        print(f"✅ Added column {column_name} to calendar_event table")
+                        # Add column to table using the new syntax
+                        with db.engine.connect() as conn:
+                            conn.execute(
+                                text(f'ALTER TABLE calendar_event ADD COLUMN {column_name} {column_type}'))
+                            conn.commit()
+                        print(
+                            f"✅ Added column {column_name} to calendar_event table")
                     except Exception as e:
                         print(f"⚠️ Could not add column {column_name}: {e}")
-                        
+
     except Exception as e:
         print(f"❌ Error updating database schema: {e}")
         import traceback
         traceback.print_exc()
+
 
 # Initialize database on startup
 print("🗄️ Initializing database tables...")
@@ -140,6 +160,8 @@ def sitemap():
     return send_from_directory(static_file_dir, 'index.html')
 
 # any other endpoint will try to serve it like a static file
+
+
 @app.route('/<path:path>', methods=['GET'])
 def serve_any_other_file(path):
     if not os.path.isfile(os.path.join(static_file_dir, path)):

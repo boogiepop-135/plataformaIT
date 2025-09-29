@@ -10,8 +10,13 @@ const getBackendUrl = () => {
     return "http://localhost:3001";
   }
 
+  // Check if we're running on Railway production URL
+  if (window.location.hostname === "informaticait.up.railway.app") {
+    return "https://informaticait.up.railway.app";
+  }
+
   // If we're in production and no VITE_BACKEND_URL is set,
-  // assume the backend is on the same domain with /api prefix
+  // assume the backend is on the same domain
   return window.location.origin;
 };
 

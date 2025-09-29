@@ -12,6 +12,7 @@ import { TicketSystem } from "./pages/TicketSystem";
 import { Calendar } from "./pages/Calendar";
 import { Single } from "./pages/Single";
 import { Demo } from "./pages/Demo";
+import MatrixManager from "./pages/MatrixManager";
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
@@ -29,6 +30,7 @@ export const router = createBrowserRouter(
       <Route path="/kanban" element={<KanbanBoard />} />
       <Route path="/tickets" element={<TicketSystem />} />
       <Route path="/calendar" element={<Calendar />} />
+      <Route path="/matrices" element={<MatrixManager />} />
       <Route path="/single/:theId" element={<Single />} />  {/* Dynamic route for single items */}
       <Route path="/demo" element={<Demo />} />
     </Route>

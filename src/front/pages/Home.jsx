@@ -198,6 +198,35 @@ export const Home = () => {
 				</div>
 			</div>
 
+			{/* Additional Tools */}
+			<div className="row mb-4">
+				<div className="col-12">
+					<h3>Herramientas de Análisis</h3>
+				</div>
+				<div className="col-md-6 mb-3">
+					<Link to="/matrices" className="text-decoration-none">
+						<div className="card h-100 border-info">
+							<div className="card-body text-center">
+								<i className="fas fa-th fa-3x text-info mb-3"></i>
+								<h5 className="card-title">Matrices de Análisis</h5>
+								<p className="card-text">Crea matrices SWOT, de riesgos, decisión y más para análisis estratégico</p>
+							</div>
+						</div>
+					</Link>
+				</div>
+				<div className="col-md-6 mb-3">
+					<Link to="/demo" className="text-decoration-none">
+						<div className="card h-100 border-secondary">
+							<div className="card-body text-center">
+								<i className="fas fa-flask fa-3x text-secondary mb-3"></i>
+								<h5 className="card-title">Demo</h5>
+								<p className="card-text">Explora funcionalidades de demostración del sistema</p>
+							</div>
+						</div>
+					</Link>
+				</div>
+			</div>
+
 			{/* Backend Status */}
 			<div className="row">
 				<div className="col-12">
