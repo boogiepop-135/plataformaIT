@@ -12,12 +12,22 @@ class User(db.Model):
     password = db.Column(db.String(255), nullable=False)
     is_active = db.Column(db.Boolean(), nullable=False, default=True)
     name = db.Column(db.String(100), nullable=True)
+    # 'admin', 'user', 'viewer'
+    role = db.Column(db.String(50), nullable=False, default='viewer')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_login = db.Column(db.DateTime, nullable=True)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
 
     def serialize(self):
         return {
             "id": self.id,
             "email": self.email,
             "name": self.name,
+            "role": self.role,
+            "is_active": self.is_active,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "last_login": self.last_login.isoformat() if self.last_login else None,
+            "created_by": self.created_by,
             # do not serialize the password, its a security breach
         }
 

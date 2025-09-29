@@ -2,10 +2,12 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.jsx";
 import AdminLogin from "./AdminLogin.jsx";
+import UserManagement from "./UserManagement.jsx";
 
 export const Navbar = () => {
 	const { isAuthenticated, logout } = useAuth();
 	const [showLogin, setShowLogin] = useState(false);
+	const [showUserManagement, setShowUserManagement] = useState(false);
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 	const location = useLocation();
 
@@ -56,11 +58,10 @@ export const Navbar = () => {
 									<Link
 										key={item.path}
 										to={item.path}
-										className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 group ${
-											isActivePath(item.path)
+										className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 group ${isActivePath(item.path)
 												? 'bg-blue-600/90 text-white shadow-lg shadow-blue-600/30'
 												: 'text-blue-100 hover:bg-white/10 hover:text-white'
-										}`}
+											}`}
 									>
 										<i className={`${item.icon} text-sm`}></i>
 										<span>{item.label}</span>
@@ -89,19 +90,44 @@ export const Navbar = () => {
 											</div>
 											<i className="fas fa-chevron-down text-xs transition-transform group-hover:rotate-180"></i>
 										</button>
-										
-										<div id="adminDropdown" className="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50">
+
+										<div id="adminDropdown" className="hidden absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50">
 											<div className="px-4 py-3 bg-gradient-to-r from-green-50 to-emerald-50 border-b border-gray-100">
 												<p className="text-sm font-semibold text-gray-900">Panel Administrativo</p>
 												<p className="text-xs text-gray-600">Sesión activa</p>
 											</div>
-											<button
-												onClick={handleLogout}
-												className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-150 flex items-center space-x-2"
-											>
-												<i className="fas fa-sign-out-alt"></i>
-												<span>Cerrar Sesión</span>
-											</button>
+											<div className="py-2">
+												<button
+													onClick={() => {
+														setShowUserManagement(true);
+														document.getElementById('adminDropdown').classList.add('hidden');
+													}}
+													className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150 flex items-center space-x-2"
+												>
+													<i className="fas fa-users"></i>
+													<span>Gestión de Usuarios</span>
+												</button>
+												<button
+													onClick={() => {
+														// Future: Add settings functionality
+														alert('Configuración del sistema (próximamente)');
+														document.getElementById('adminDropdown').classList.add('hidden');
+													}}
+													className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-600 transition-colors duration-150 flex items-center space-x-2"
+												>
+													<i className="fas fa-cogs"></i>
+													<span>Configuración</span>
+												</button>
+											</div>
+											<div className="border-t border-gray-100">
+												<button
+													onClick={handleLogout}
+													className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-150 flex items-center space-x-2"
+												>
+													<i className="fas fa-sign-out-alt"></i>
+													<span>Cerrar Sesión</span>
+												</button>
+											</div>
 										</div>
 									</div>
 								) : (
@@ -138,18 +164,17 @@ export const Navbar = () => {
 									key={item.path}
 									to={item.path}
 									onClick={() => setMobileMenuOpen(false)}
-									className={`block px-3 py-2 rounded-md text-base font-medium transition-all duration-200 ${
-										isActivePath(item.path)
+									className={`block px-3 py-2 rounded-md text-base font-medium transition-all duration-200 ${isActivePath(item.path)
 											? 'bg-blue-600 text-white'
 											: 'text-blue-100 hover:bg-white/10 hover:text-white'
-									}`}
+										}`}
 								>
 									<i className={`${item.icon} mr-3`}></i>
 									{item.label}
 								</Link>
 							))}
 						</div>
-						
+
 						{/* Mobile Auth Section */}
 						<div className="pt-4 pb-3 border-t border-blue-800/30">
 							<div className="px-2">
@@ -197,6 +222,13 @@ export const Navbar = () => {
 				<AdminLogin
 					onClose={() => setShowLogin(false)}
 					onLoginSuccess={() => setShowLogin(false)}
+				/>
+			)}
+
+			{/* User Management Modal */}
+			{showUserManagement && (
+				<UserManagement
+					onClose={() => setShowUserManagement(false)}
 				/>
 			)}
 		</>

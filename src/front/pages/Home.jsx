@@ -13,6 +13,13 @@ export const Home = () => {
 		events: { today: 0, thisWeek: 0 },
 		matrices: { total: 0 }
 	})
+	const [storageInfo, setStorageInfo] = useState({
+		usage_percent: 85,
+		status: 'warning',
+		total_gb: 100,
+		used_gb: 85,
+		free_gb: 15
+	})
 	const [loading, setLoading] = useState(true)
 
 	const loadStats = async () => {
@@ -33,6 +40,10 @@ export const Home = () => {
 			// Load matrices
 			const matricesResponse = await fetch(BACKEND_URL + "/api/matrices")
 			const matricesData = await matricesResponse.json()
+
+			// Load storage info
+			const storageResponse = await fetch(BACKEND_URL + "/api/system/storage")
+			const storageData = await storageResponse.json()
 
 			if (tasksResponse.ok && ticketsResponse.ok && eventsResponse.ok && matricesResponse.ok) {
 				setStats({
@@ -63,6 +74,11 @@ export const Home = () => {
 						total: matricesData.length
 					}
 				})
+
+				// Update storage info if available
+				if (storageResponse.ok) {
+					setStorageInfo(storageData)
+				}
 			}
 
 		} catch (error) {
@@ -123,7 +139,7 @@ export const Home = () => {
 							</div>
 						</div>
 						<p className="text-xl text-blue-100 max-w-3xl mx-auto leading-relaxed">
-							Sistema integral de gestión para equipos de IT. Administra tareas, tickets, calendario y matrices 
+							Sistema integral de gestión para equipos de IT. Administra tareas, tickets, calendario y matrices
 							de análisis desde una sola plataforma profesional.
 						</p>
 						{!isAuthenticated && (
@@ -323,15 +339,18 @@ export const Home = () => {
 								{ service: "Base de Datos", status: "Operativo", color: "green" },
 								{ service: "API Backend", status: "Operativo", color: "green" },
 								{ service: "Autenticación", status: "Operativo", color: "green" },
-								{ service: "Almacenamiento", status: "85% Usado", color: "yellow" }
+								{ 
+									service: "Almacenamiento", 
+									status: `${storageInfo.usage_percent}% Usado (${storageInfo.used_gb}GB/${storageInfo.total_gb}GB)`, 
+									color: storageInfo.status === 'warning' ? "yellow" : "green" 
+								}
 							].map((item, idx) => (
 								<div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
 									<span className="font-medium text-gray-700">{item.service}</span>
-									<span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-										item.color === 'green' ? 'bg-green-100 text-green-800' :
-										item.color === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
-										'bg-red-100 text-red-800'
-									}`}>
+									<span className={`px-3 py-1 rounded-full text-sm font-semibold ${item.color === 'green' ? 'bg-green-100 text-green-800' :
+											item.color === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
+												'bg-red-100 text-red-800'
+										}`}>
 										{item.status}
 									</span>
 								</div>
