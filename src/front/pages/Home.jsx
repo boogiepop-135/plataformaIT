@@ -339,17 +339,17 @@ export const Home = () => {
 								{ service: "Base de Datos", status: "Operativo", color: "green" },
 								{ service: "API Backend", status: "Operativo", color: "green" },
 								{ service: "Autenticación", status: "Operativo", color: "green" },
-								{ 
-									service: "Almacenamiento", 
-									status: `${storageInfo.usage_percent}% Usado (${storageInfo.used_gb}GB/${storageInfo.total_gb}GB)`, 
-									color: storageInfo.status === 'warning' ? "yellow" : "green" 
+								{
+									service: "Almacenamiento",
+									status: `${storageInfo.usage_percent}% Usado (${storageInfo.used_gb}GB/${storageInfo.total_gb}GB)`,
+									color: storageInfo.status === 'warning' ? "yellow" : "green"
 								}
 							].map((item, idx) => (
 								<div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
 									<span className="font-medium text-gray-700">{item.service}</span>
 									<span className={`px-3 py-1 rounded-full text-sm font-semibold ${item.color === 'green' ? 'bg-green-100 text-green-800' :
-											item.color === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
-												'bg-red-100 text-red-800'
+										item.color === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
+											'bg-red-100 text-red-800'
 										}`}>
 										{item.status}
 									</span>

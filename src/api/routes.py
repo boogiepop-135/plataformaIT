@@ -746,7 +746,8 @@ def update_user(user_id):
         if 'email' in data:
             # Check if new email already exists
             if data['email'] != user.email:
-                existing_user = User.query.filter_by(email=data['email']).first()
+                existing_user = User.query.filter_by(
+                    email=data['email']).first()
                 if existing_user:
                     return jsonify({"error": "Email already exists"}), 400
             user.email = data['email']
@@ -772,7 +773,7 @@ def delete_user(user_id):
     """Delete user (admin only)"""
     try:
         user = User.query.get_or_404(user_id)
-        
+
         # Prevent deletion of admin user (assuming ID 1)
         if user_id == 1:
             return jsonify({"error": "Cannot delete main admin user"}), 400
@@ -791,14 +792,14 @@ def toggle_user_status(user_id):
     """Toggle user active status (admin only)"""
     try:
         user = User.query.get_or_404(user_id)
-        
+
         # Prevent deactivation of main admin
         if user_id == 1:
             return jsonify({"error": "Cannot deactivate main admin user"}), 400
-            
+
         user.is_active = not user.is_active
         db.session.commit()
-        
+
         status = "activated" if user.is_active else "deactivated"
         return jsonify({
             "message": f"User {status} successfully",
@@ -815,28 +816,28 @@ def change_admin_password():
     """Change admin password"""
     try:
         data = request.get_json()
-        
+
         current_password = data.get('current_password')
         new_password = data.get('new_password')
-        
+
         if not current_password or not new_password:
             return jsonify({"error": "Current password and new password are required"}), 400
-            
+
         # Verify current password (simplified - in production check hashed password)
         if current_password != "admin123":
             return jsonify({"error": "Current password is incorrect"}), 400
-            
+
         if len(new_password) < 6:
             return jsonify({"error": "New password must be at least 6 characters"}), 400
-            
+
         # In production, you would update the hashed password in database
         # For now, we'll just return success (the hardcoded password would need manual update)
-        
+
         return jsonify({
             "message": "Password change request received. In production, this would update the database.",
             "note": "Current implementation uses hardcoded credentials for demo purposes"
         }), 200
-        
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -847,17 +848,17 @@ def get_storage_info():
     try:
         import os
         import shutil
-        
+
         # Get current working directory info
         total, used, free = shutil.disk_usage('/')
-        
+
         # Convert to GB
         total_gb = total // (1024**3)
-        used_gb = used // (1024**3) 
+        used_gb = used // (1024**3)
         free_gb = free // (1024**3)
-        
+
         usage_percent = (used / total) * 100
-        
+
         return jsonify({
             "total_gb": total_gb,
             "used_gb": used_gb,
@@ -865,7 +866,7 @@ def get_storage_info():
             "usage_percent": round(usage_percent, 1),
             "status": "warning" if usage_percent > 80 else "good"
         }), 200
-        
+
     except Exception as e:
         return jsonify({
             "total_gb": 100,

@@ -59,8 +59,8 @@ export const Navbar = () => {
 										key={item.path}
 										to={item.path}
 										className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 group ${isActivePath(item.path)
-												? 'bg-blue-600/90 text-white shadow-lg shadow-blue-600/30'
-												: 'text-blue-100 hover:bg-white/10 hover:text-white'
+											? 'bg-blue-600/90 text-white shadow-lg shadow-blue-600/30'
+											: 'text-blue-100 hover:bg-white/10 hover:text-white'
 											}`}
 									>
 										<i className={`${item.icon} text-sm`}></i>
@@ -165,8 +165,8 @@ export const Navbar = () => {
 									to={item.path}
 									onClick={() => setMobileMenuOpen(false)}
 									className={`block px-3 py-2 rounded-md text-base font-medium transition-all duration-200 ${isActivePath(item.path)
-											? 'bg-blue-600 text-white'
-											: 'text-blue-100 hover:bg-white/10 hover:text-white'
+										? 'bg-blue-600 text-white'
+										: 'text-blue-100 hover:bg-white/10 hover:text-white'
 										}`}
 								>
 									<i className={`${item.icon} mr-3`}></i>

@@ -21,33 +21,38 @@ def upgrade():
     # Check if admin table exists before creating
     import sqlite3
     from sqlalchemy import text
-    
+
     # Only add columns to user table since admin already exists
     with op.batch_alter_table('user', schema=None) as batch_op:
         # Check if columns already exist before adding them
         try:
             # Add role column with default value
-            batch_op.add_column(sa.Column('role', sa.String(length=50), nullable=False, server_default='viewer'))
+            batch_op.add_column(sa.Column('role', sa.String(
+                length=50), nullable=False, server_default='viewer'))
         except:
             pass  # Column may already exist
-        
+
         try:
-            batch_op.add_column(sa.Column('created_at', sa.DateTime(), nullable=True))
+            batch_op.add_column(
+                sa.Column('created_at', sa.DateTime(), nullable=True))
         except:
             pass
-            
+
         try:
-            batch_op.add_column(sa.Column('last_login', sa.DateTime(), nullable=True))
+            batch_op.add_column(
+                sa.Column('last_login', sa.DateTime(), nullable=True))
         except:
             pass
-            
+
         try:
-            batch_op.add_column(sa.Column('created_by', sa.Integer(), nullable=True))
+            batch_op.add_column(
+                sa.Column('created_by', sa.Integer(), nullable=True))
         except:
             pass
-            
+
         try:
-            batch_op.create_foreign_key('fk_user_created_by', 'user', ['created_by'], ['id'])
+            batch_op.create_foreign_key(
+                'fk_user_created_by', 'user', ['created_by'], ['id'])
         except:
             pass
 
@@ -61,22 +66,22 @@ def downgrade():
             batch_op.drop_constraint('fk_user_created_by', type_='foreignkey')
         except:
             pass
-        
+
         try:
             batch_op.drop_column('created_by')
         except:
             pass
-            
+
         try:
             batch_op.drop_column('last_login')
         except:
             pass
-            
+
         try:
             batch_op.drop_column('created_at')
         except:
             pass
-            
+
         try:
             batch_op.drop_column('role')
         except:

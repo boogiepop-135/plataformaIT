@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import BACKEND_URL from "../config/backend.js";
-import authManager from "../utils/auth.js";
+import { useAuth } from "../hooks/useAuth.jsx";
 
 export const KanbanBoard = () => {
+    const { isAuthenticated, getAuthHeaders } = useAuth();
     const [tasks, setTasks] = useState([]);
     const [showTaskModal, setShowTaskModal] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
@@ -46,11 +47,8 @@ export const KanbanBoard = () => {
 
     const handleSaveTask = async () => {
         // Check authentication before saving
-        const isAuthenticated = await authManager.checkAuthForAction(
-            editingTask ? "editar esta tarea" : "crear una nueva tarea"
-        );
-
         if (!isAuthenticated) {
+            alert("Debes estar autenticado para " + (editingTask ? "editar esta tarea" : "crear una nueva tarea"));
             return;
         }
 
@@ -63,9 +61,7 @@ export const KanbanBoard = () => {
 
             const response = await fetch(url, {
                 method,
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: getAuthHeaders(),
                 body: JSON.stringify(newTask),
             });
 
@@ -99,10 +95,16 @@ export const KanbanBoard = () => {
     };
 
     const handleDeleteTask = async (taskId) => {
+        if (!isAuthenticated) {
+            alert("Debes estar autenticado para eliminar esta tarea");
+            return;
+        }
+
         if (confirm("¿Estás seguro de que quieres eliminar esta tarea?")) {
             try {
                 const response = await fetch(`${BACKEND_URL}/api/tasks/${taskId}`, {
                     method: "DELETE",
+                    headers: getAuthHeaders(),
                 });
 
                 if (response.ok) {
@@ -126,13 +128,16 @@ export const KanbanBoard = () => {
         e.preventDefault();
         const taskData = JSON.parse(e.dataTransfer.getData("text/plain"));
 
+        if (!isAuthenticated) {
+            alert("Debes estar autenticado para mover tareas");
+            return;
+        }
+
         if (taskData.status !== newStatus) {
             try {
                 const response = await fetch(`${BACKEND_URL}/api/tasks/${taskData.id}`, {
                     method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify({ ...taskData, status: newStatus }),
                 });
 

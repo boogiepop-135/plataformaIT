@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import BACKEND_URL from '../config/backend.js';
+import { useAuth } from '../hooks/useAuth.jsx';
 
 const UserManagement = ({ onClose }) => {
+    const { getAuthHeaders } = useAuth();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -40,9 +42,7 @@ const UserManagement = ({ onClose }) => {
         try {
             setLoading(true);
             const response = await fetch(`${BACKEND_URL}/api/users`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-                }
+                headers: getAuthHeaders()
             });
 
             if (response.ok) {
@@ -71,10 +71,7 @@ const UserManagement = ({ onClose }) => {
         try {
             const response = await fetch(`${BACKEND_URL}/api/users`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-                },
+                headers: getAuthHeaders(),
                 body: JSON.stringify(newUser)
             });
 
@@ -97,9 +94,7 @@ const UserManagement = ({ onClose }) => {
         try {
             const response = await fetch(`${BACKEND_URL}/api/users/${userId}/toggle-status`, {
                 method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-                }
+                headers: getAuthHeaders()
             });
 
             const data = await response.json();
@@ -123,9 +118,7 @@ const UserManagement = ({ onClose }) => {
         try {
             const response = await fetch(`${BACKEND_URL}/api/users/${userId}`, {
                 method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-                }
+                headers: getAuthHeaders()
             });
 
             const data = await response.json();
@@ -159,10 +152,7 @@ const UserManagement = ({ onClose }) => {
         try {
             const response = await fetch(`${BACKEND_URL}/api/auth/change-password`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-                },
+                headers: getAuthHeaders(),
                 body: JSON.stringify({
                     current_password: passwordData.current_password,
                     new_password: passwordData.new_password
@@ -216,7 +206,7 @@ const UserManagement = ({ onClose }) => {
                             <span className="text-red-700">{error}</span>
                         </div>
                     )}
-                    
+
                     {success && (
                         <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-center space-x-3">
                             <i className="fas fa-check-circle text-green-500"></i>
@@ -291,11 +281,10 @@ const UserManagement = ({ onClose }) => {
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                                        user.is_active 
-                                                            ? 'bg-green-100 text-green-800' 
+                                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user.is_active
+                                                            ? 'bg-green-100 text-green-800'
                                                             : 'bg-red-100 text-red-800'
-                                                    }`}>
+                                                        }`}>
                                                         {user.is_active ? 'Activo' : 'Inactivo'}
                                                     </span>
                                                 </td>
@@ -307,20 +296,18 @@ const UserManagement = ({ onClose }) => {
                                                         <button
                                                             onClick={() => handleToggleStatus(user.id)}
                                                             disabled={user.id === 1}
-                                                            className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors duration-200 ${
-                                                                user.is_active
+                                                            className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors duration-200 ${user.is_active
                                                                     ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
                                                                     : 'bg-green-100 text-green-800 hover:bg-green-200'
-                                                            } ${user.id === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                } ${user.id === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                         >
                                                             {user.is_active ? 'Desactivar' : 'Activar'}
                                                         </button>
                                                         <button
                                                             onClick={() => handleDeleteUser(user.id)}
                                                             disabled={user.id === 1}
-                                                            className={`px-3 py-1 bg-red-100 text-red-800 hover:bg-red-200 rounded-lg text-xs font-medium transition-colors duration-200 ${
-                                                                user.id === 1 ? 'opacity-50 cursor-not-allowed' : ''
-                                                            }`}
+                                                            className={`px-3 py-1 bg-red-100 text-red-800 hover:bg-red-200 rounded-lg text-xs font-medium transition-colors duration-200 ${user.id === 1 ? 'opacity-50 cursor-not-allowed' : ''
+                                                                }`}
                                                         >
                                                             Eliminar
                                                         </button>
@@ -353,7 +340,7 @@ const UserManagement = ({ onClose }) => {
                                     <input
                                         type="text"
                                         value={newUser.name}
-                                        onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+                                        onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         required
                                     />
@@ -363,7 +350,7 @@ const UserManagement = ({ onClose }) => {
                                     <input
                                         type="email"
                                         value={newUser.email}
-                                        onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                                        onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         required
                                     />
@@ -373,7 +360,7 @@ const UserManagement = ({ onClose }) => {
                                     <input
                                         type="password"
                                         value={newUser.password}
-                                        onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+                                        onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         required
                                         minLength="6"
@@ -383,7 +370,7 @@ const UserManagement = ({ onClose }) => {
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Rol</label>
                                     <select
                                         value={newUser.role}
-                                        onChange={(e) => setNewUser({...newUser, role: e.target.value})}
+                                        onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
                                         <option value="viewer">Solo Lectura</option>
@@ -429,7 +416,7 @@ const UserManagement = ({ onClose }) => {
                                     <input
                                         type="password"
                                         value={passwordData.current_password}
-                                        onChange={(e) => setPasswordData({...passwordData, current_password: e.target.value})}
+                                        onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
                                         required
                                     />
@@ -439,7 +426,7 @@ const UserManagement = ({ onClose }) => {
                                     <input
                                         type="password"
                                         value={passwordData.new_password}
-                                        onChange={(e) => setPasswordData({...passwordData, new_password: e.target.value})}
+                                        onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
                                         required
                                         minLength="6"
@@ -450,7 +437,7 @@ const UserManagement = ({ onClose }) => {
                                     <input
                                         type="password"
                                         value={passwordData.confirm_password}
-                                        onChange={(e) => setPasswordData({...passwordData, confirm_password: e.target.value})}
+                                        onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
                                         required
                                         minLength="6"
@@ -463,7 +450,7 @@ const UserManagement = ({ onClose }) => {
                                     <div>
                                         <h4 className="text-yellow-800 font-medium text-sm">Nota Importante</h4>
                                         <p className="text-yellow-700 text-sm">
-                                            En la versión actual, las credenciales están hardcodeadas. 
+                                            En la versión actual, las credenciales están hardcodeadas.
                                             Esta funcionalidad está preparada para un sistema de producción completo.
                                         </p>
                                     </div>
