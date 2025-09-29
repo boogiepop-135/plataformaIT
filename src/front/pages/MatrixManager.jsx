@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import BACKEND_URL from '../config/backend.js';
+import { useAuth } from '../hooks/useAuth.jsx';
 
 const MatrixManager = () => {
+    const { isAuthenticated, getAuthHeaders } = useAuth();
     const [matrices, setMatrices] = useState([]);
     const [templates, setTemplates] = useState({});
     const [currentMatrix, setCurrentMatrix] = useState(null);
@@ -48,12 +50,15 @@ const MatrixManager = () => {
     };
 
     const createMatrix = async (matrixData) => {
+        if (!isAuthenticated) {
+            alert("Debes estar autenticado para crear una matriz");
+            return;
+        }
+
         try {
             const response = await fetch(`${BACKEND_URL}/api/matrices`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: getAuthHeaders(),
                 body: JSON.stringify(matrixData),
             });
 
@@ -70,12 +75,15 @@ const MatrixManager = () => {
     };
 
     const updateMatrix = async (matrixId, updates) => {
+        if (!isAuthenticated) {
+            alert("Debes estar autenticado para actualizar una matriz");
+            return;
+        }
+
         try {
             const response = await fetch(`${BACKEND_URL}/api/matrices/${matrixId}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: getAuthHeaders(),
                 body: JSON.stringify(updates),
             });
 
@@ -94,11 +102,17 @@ const MatrixManager = () => {
     };
 
     const deleteMatrix = async (matrixId) => {
+        if (!isAuthenticated) {
+            alert("Debes estar autenticado para eliminar una matriz");
+            return;
+        }
+
         if (!window.confirm('¿Estás seguro de que quieres eliminar esta matriz?')) return;
 
         try {
             const response = await fetch(`${BACKEND_URL}/api/matrices/${matrixId}`, {
                 method: 'DELETE',
+                headers: getAuthHeaders(),
             });
 
             if (response.ok) {

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import BACKEND_URL from "../config/backend.js";
-import authManager from "../utils/auth.js";
+import { useAuth } from "../hooks/useAuth.jsx";
 
 export const Calendar = () => {
+    const { isAuthenticated, getAuthHeaders } = useAuth();
     const [events, setEvents] = useState([]);
     const [currentDate, setCurrentDate] = useState(new Date());
     const [showEventModal, setShowEventModal] = useState(false);
@@ -89,11 +90,8 @@ export const Calendar = () => {
 
     const handleSaveEvent = async () => {
         // Check authentication before saving
-        const isAuthenticated = await authManager.checkAuthForAction(
-            editingEvent ? "editar este evento" : "crear un nuevo evento"
-        );
-
         if (!isAuthenticated) {
+            alert(editingEvent ? "Debes estar autenticado para editar este evento" : "Debes estar autenticado para crear un nuevo evento");
             return;
         }
 
@@ -129,9 +127,7 @@ export const Calendar = () => {
                 for (const event of recurringEvents) {
                     await fetch(`${BACKEND_URL}/api/calendar-events`, {
                         method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
+                        headers: getAuthHeaders(),
                         body: JSON.stringify(event),
                     });
                 }
@@ -139,9 +135,7 @@ export const Calendar = () => {
                 // Handle recurring event editing
                 const response = await fetch(`${BACKEND_URL}/api/calendar-events/${editingEvent.id}/update-recurring`, {
                     method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify({
                         ...eventData,
                         update_all: editingEvent.editChoice === 'all'
@@ -155,9 +149,7 @@ export const Calendar = () => {
                 // Save single event (create or update)
                 const response = await fetch(url, {
                     method,
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify(eventData),
                 });
 
@@ -172,14 +164,13 @@ export const Calendar = () => {
             setSelectedDate(null);
             resetEventForm();
 
-            authManager.showNotification(
-                editingEvent ? "Evento actualizado correctamente" : "Evento creado correctamente",
-                "success"
-            );
+            alert(editingEvent 
+                ? "Evento actualizado correctamente" 
+                : "Evento creado correctamente");
 
         } catch (error) {
             console.error("Error saving event:", error);
-            authManager.showNotification("Error al guardar el evento", "danger");
+            alert("Error al guardar el evento");
         }
     };
 
@@ -297,9 +288,8 @@ export const Calendar = () => {
 
     const handleDeleteEvent = async (event) => {
         // Check authentication before deleting
-        const isAuthenticated = await authManager.checkAuthForAction("eliminar este evento");
-
         if (!isAuthenticated) {
+            alert("Debes estar autenticado para eliminar este evento");
             return;
         }
 
@@ -311,9 +301,7 @@ export const Calendar = () => {
             try {
                 const response = await fetch(`${BACKEND_URL}/api/calendar-events/${event.id}/delete-recurring`, {
                     method: "DELETE",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify({
                         delete_all: deleteChoice === 'all'
                     })
@@ -322,13 +310,13 @@ export const Calendar = () => {
                 if (response.ok) {
                     const result = await response.json();
                     loadEvents();
-                    authManager.showNotification(result.message, "success");
+                    alert(result.message);
                 } else {
                     throw new Error("Error deleting recurring event");
                 }
             } catch (error) {
                 console.error("Error deleting recurring event:", error);
-                authManager.showNotification("Error al eliminar el evento", "danger");
+                alert("Error al eliminar el evento");
             }
         } else {
             // Regular single event deletion
@@ -336,17 +324,18 @@ export const Calendar = () => {
                 try {
                     const response = await fetch(`${BACKEND_URL}/api/calendar-events/${event.id}`, {
                         method: "DELETE",
+                        headers: getAuthHeaders(),
                     });
 
                     if (response.ok) {
                         loadEvents();
-                        authManager.showNotification("Evento eliminado correctamente", "success");
+                        alert("Evento eliminado correctamente");
                     } else {
                         throw new Error("Error deleting event");
                     }
                 } catch (error) {
                     console.error("Error deleting event:", error);
-                    authManager.showNotification("Error al eliminar el evento", "danger");
+                    alert("Error al eliminar el evento");
                 }
             }
         }

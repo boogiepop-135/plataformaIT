@@ -282,8 +282,8 @@ const UserManagement = ({ onClose }) => {
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user.is_active
-                                                            ? 'bg-green-100 text-green-800'
-                                                            : 'bg-red-100 text-red-800'
+                                                        ? 'bg-green-100 text-green-800'
+                                                        : 'bg-red-100 text-red-800'
                                                         }`}>
                                                         {user.is_active ? 'Activo' : 'Inactivo'}
                                                     </span>
@@ -297,8 +297,8 @@ const UserManagement = ({ onClose }) => {
                                                             onClick={() => handleToggleStatus(user.id)}
                                                             disabled={user.id === 1}
                                                             className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors duration-200 ${user.is_active
-                                                                    ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                                                                    : 'bg-green-100 text-green-800 hover:bg-green-200'
+                                                                ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                                                                : 'bg-green-100 text-green-800 hover:bg-green-200'
                                                                 } ${user.id === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                         >
                                                             {user.is_active ? 'Desactivar' : 'Activar'}
