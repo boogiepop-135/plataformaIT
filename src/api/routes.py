@@ -1173,10 +1173,17 @@ def export_tickets_excel():
 def export_matrices_pdf():
     """Export matrices to PDF"""
     try:
-        from api.export_utils import export_manager
+        # Import at the top or handle import errors better
+        try:
+            from api.export_utils import export_manager
+        except ImportError as ie:
+            return jsonify({"error": f"Import error: {str(ie)}"}), 500
 
         matrices = Matrix.query.all()
         matrices_data = [matrix.serialize() for matrix in matrices]
+
+        if not matrices_data:
+            return jsonify({"error": "No matrices found to export"}), 404
 
         pdf_buffer = export_manager.export_matrices_pdf(matrices_data)
 
@@ -1187,18 +1194,62 @@ def export_matrices_pdf():
 
         return response
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        # Better error logging
+        import traceback
+        error_details = {
+            "error": str(e),
+            "type": type(e).__name__,
+            "traceback": traceback.format_exc()
+        }
+        print(f"PDF Export Error: {error_details}")  # For server logs
+        return jsonify({"error": f"Export failed: {str(e)}"}), 500
 
+
+@api.route('/matrices/export/health', methods=['GET'])
+def export_health_check():
+    """Health check for export functionality"""
+    try:
+        # Test imports
+        try:
+            from api.export_utils import export_manager
+            import reportlab
+            import openpyxl
+            import pandas
+            
+            return jsonify({
+                "status": "healthy",
+                "reportlab_version": reportlab.Version,
+                "openpyxl_available": True,
+                "pandas_available": True,
+                "export_manager_available": True
+            }), 200
+        except ImportError as e:
+            return jsonify({
+                "status": "unhealthy",
+                "error": f"Import error: {str(e)}"
+            }), 500
+    except Exception as e:
+        return jsonify({
+            "status": "unhealthy",
+            "error": str(e)
+        }), 500
 
 @api.route('/matrices/export/excel', methods=['GET'])
 @admin_required
 def export_matrices_excel():
     """Export matrices to Excel"""
     try:
-        from api.export_utils import export_manager
+        # Import at the top or handle import errors better
+        try:
+            from api.export_utils import export_manager
+        except ImportError as ie:
+            return jsonify({"error": f"Import error: {str(ie)}"}), 500
 
         matrices = Matrix.query.all()
         matrices_data = [matrix.serialize() for matrix in matrices]
+
+        if not matrices_data:
+            return jsonify({"error": "No matrices found to export"}), 404
 
         excel_buffer = export_manager.export_matrices_excel(matrices_data)
 
@@ -1209,7 +1260,15 @@ def export_matrices_excel():
 
         return response
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        # Better error logging
+        import traceback
+        error_details = {
+            "error": str(e),
+            "type": type(e).__name__,
+            "traceback": traceback.format_exc()
+        }
+        print(f"Excel Export Error: {error_details}")  # For server logs
+        return jsonify({"error": f"Export failed: {str(e)}"}), 500
 
 
 @api.route('/journal/export/pdf', methods=['GET'])
