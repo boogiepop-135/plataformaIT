@@ -11,6 +11,9 @@ const MatrixManager = () => {
     const [showModal, setShowModal] = useState(false);
     const [showTemplateModal, setShowTemplateModal] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [tempMatrixData, setTempMatrixData] = useState({});
     const [newMatrixForm, setNewMatrixForm] = useState({
         name: '',
         description: '',
@@ -140,6 +143,8 @@ const MatrixManager = () => {
                 const newMatrix = await response.json();
                 setMatrices([...matrices, newMatrix]);
                 setCurrentMatrix(newMatrix);
+                setTempMatrixData(newMatrix.data || {});
+                setHasUnsavedChanges(false);
                 return true;
             }
         } catch (error) {
@@ -232,10 +237,39 @@ const MatrixManager = () => {
     const handleCellEdit = (row, col, value) => {
         if (!currentMatrix) return;
 
-        const updatedData = { ...currentMatrix.data };
+        const updatedData = { ...tempMatrixData };
         updatedData[`${row}-${col}`] = value;
 
-        updateMatrix(currentMatrix.id, { data: updatedData });
+        setTempMatrixData(updatedData);
+        setHasUnsavedChanges(true);
+    };
+
+    const handleSaveMatrix = async () => {
+        if (!currentMatrix || !hasUnsavedChanges) return;
+
+        setSaving(true);
+        try {
+            const success = await updateMatrix(currentMatrix.id, { data: tempMatrixData });
+            if (success) {
+                setHasUnsavedChanges(false);
+                // Actualizar la matriz actual con los nuevos datos
+                setCurrentMatrix({
+                    ...currentMatrix,
+                    data: tempMatrixData
+                });
+            }
+        } catch (error) {
+            console.error('Error saving matrix:', error);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDiscardChanges = () => {
+        if (currentMatrix) {
+            setTempMatrixData(currentMatrix.data || {});
+            setHasUnsavedChanges(false);
+        }
     };
 
     const getMatrixTypeLabel = (type) => {
@@ -353,7 +387,11 @@ const MatrixManager = () => {
                                                 key={matrix.id}
                                                 className={`list-group-item list-group-item-action ${currentMatrix?.id === matrix.id ? 'active' : ''
                                                     }`}
-                                                onClick={() => setCurrentMatrix(matrix)}
+                                                onClick={() => {
+                                                    setCurrentMatrix(matrix);
+                                                    setTempMatrixData(matrix.data || {});
+                                                    setHasUnsavedChanges(false);
+                                                }}
                                                 style={{ cursor: 'pointer' }}
                                             >
                                                 <div className="d-flex justify-content-between align-items-start">
@@ -399,12 +437,49 @@ const MatrixManager = () => {
                                         <div>
                                             <h5 className="mb-0">
                                                 <i className="fas fa-edit me-2"></i>{currentMatrix.name}
+                                                {hasUnsavedChanges && (
+                                                    <span className="badge bg-warning text-dark ms-2">
+                                                        <i className="fas fa-exclamation-triangle me-1"></i>
+                                                        Cambios sin guardar
+                                                    </span>
+                                                )}
                                             </h5>
                                             <small className="opacity-75">
                                                 {currentMatrix.description}
                                             </small>
                                         </div>
                                         <div className="d-flex align-items-center gap-2">
+                                            {hasUnsavedChanges && (
+                                                <>
+                                                    <button
+                                                        className="btn btn-outline-light btn-sm"
+                                                        onClick={handleDiscardChanges}
+                                                        disabled={saving}
+                                                        title="Descartar cambios"
+                                                    >
+                                                        <i className="fas fa-times me-1"></i>
+                                                        Descartar
+                                                    </button>
+                                                    <button
+                                                        className="btn btn-light btn-sm"
+                                                        onClick={handleSaveMatrix}
+                                                        disabled={saving}
+                                                        title="Guardar cambios"
+                                                    >
+                                                        {saving ? (
+                                                            <>
+                                                                <i className="fas fa-spinner fa-spin me-1"></i>
+                                                                Guardando...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <i className="fas fa-save me-1"></i>
+                                                                Guardar
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                </>
+                                            )}
                                             <span className={`badge ${getMatrixTypeColor(currentMatrix.matrix_type)} text-white`}>
                                                 {getMatrixTypeLabel(currentMatrix.matrix_type)}
                                             </span>
@@ -439,7 +514,7 @@ const MatrixManager = () => {
                                                                 <textarea
                                                                     className="form-control border-0 resize-none"
                                                                     style={{ minHeight: '100px', fontSize: '14px' }}
-                                                                    value={currentMatrix.data[`${rowIndex}-${colIndex}`] || ''}
+                                                                    value={tempMatrixData[`${rowIndex}-${colIndex}`] || ''}
                                                                     onChange={(e) => handleCellEdit(rowIndex, colIndex, e.target.value)}
                                                                     placeholder="Escribe aquí..."
                                                                 />

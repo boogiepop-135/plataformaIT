@@ -30,10 +30,18 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
             ]
         },
         {
+            title: "Finanzas",
+            items: [
+                { path: "/payment-reminders", icon: "fas fa-money-bill-wave", label: "Recordatorios", requireAuth: true },
+                { path: "/service-orders", icon: "fas fa-clipboard-list", label: "Órdenes", requireAuth: true },
+            ]
+        },
+        {
             title: "Usuario",
             items: [
                 { path: "/profile", icon: "fas fa-user-circle", label: "Mi Perfil", requireAuth: true },
                 { path: "/users", icon: "fas fa-users-gear", label: "Usuarios", requireAuth: true, adminOnly: true },
+                { path: "/hr-management", icon: "fas fa-user-friends", label: "Gestión RH", requireAuth: true, hrOrSuperAdmin: true },
                 { path: "/settings", icon: "fas fa-gear", label: "Configuración", requireAuth: true, adminOnly: true },
             ]
         },
@@ -52,7 +60,10 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
             if (item.requireAuth && !isAuthenticated) {
                 return false;
             }
-            if (item.adminOnly && (!user || user.role !== 'admin')) {
+            if (item.adminOnly && (!user || !['admin', 'super_admin'].includes(user.role))) {
+                return false;
+            }
+            if (item.hrOrSuperAdmin && (!user || !['hr', 'super_admin'].includes(user.role))) {
                 return false;
             }
             return true;
@@ -135,8 +146,8 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                                                 key={item.path}
                                                 to={item.path}
                                                 className={`relative flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 group ${isActive
-                                                        ? 'bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 shadow-md shadow-indigo-500/10 border border-indigo-100'
-                                                        : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600'
+                                                    ? 'bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 shadow-md shadow-indigo-500/10 border border-indigo-100'
+                                                    : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600'
                                                     }`}
                                             >
                                                 {/* Active indicator */}

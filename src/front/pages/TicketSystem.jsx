@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { BACKEND_URL } from "../config/backend.js";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { ProtectedRoute } from "../components/ProtectedRoute.jsx";
+import TicketRating from "../components/TicketRating.jsx";
 
 export const TicketSystem = () => {
     const { isAuthenticated, token, user, getAuthHeaders } = useAuth();
@@ -473,9 +474,20 @@ export const TicketSystem = () => {
                                                         </div>
                                                     )}
 
+                                                    {/* Ticket Rating Component */}
+                                                    <TicketRating
+                                                        ticket={ticket}
+                                                        onRatingSubmitted={(updatedTicket) => {
+                                                            // Actualizar el ticket en la lista
+                                                            setTickets(tickets.map(t =>
+                                                                t.id === updatedTicket.id ? updatedTicket : t
+                                                            ));
+                                                        }}
+                                                    />
+
                                                     {/* Action Buttons */}
                                                     {token && (
-                                                        <div className="flex gap-3">
+                                                        <div className="flex gap-3 mt-4">
                                                             <button
                                                                 className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white py-3 px-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-blue-500/25 flex items-center justify-center space-x-2"
                                                                 onClick={() => handleEditTicket(ticket)}

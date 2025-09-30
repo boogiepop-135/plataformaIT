@@ -17,6 +17,9 @@ import Journal from "./pages/Journal";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 import UserManagement from "./pages/UserManagement";
+import PaymentReminders from "./pages/PaymentReminders";
+import ServiceOrders from "./pages/ServiceOrders";
+import HRManagement from "./components/HRManagement";
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
@@ -41,6 +44,9 @@ export const router = createBrowserRouter(
       <Route path="/demo" element={<Demo />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/users" element={<UserManagement />} />
+      <Route path="/hr-management" element={<HRManagement />} />
+      <Route path="/payment-reminders" element={<PaymentReminders />} />
+      <Route path="/service-orders" element={<ServiceOrders />} />
     </Route>
   )
 );

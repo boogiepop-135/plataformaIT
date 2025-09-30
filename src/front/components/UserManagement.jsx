@@ -12,7 +12,7 @@ const UserManagement = ({ onClose }) => {
         name: '',
         email: '',
         password: '',
-        role: 'viewer'
+        role: 'user'
     });
     const [passwordData, setPasswordData] = useState({
         current_password: '',
@@ -23,15 +23,15 @@ const UserManagement = ({ onClose }) => {
     const [success, setSuccess] = useState('');
 
     const roleTranslations = {
+        'super_admin': 'Super Administrador',
         'admin': 'Administrador',
-        'user': 'Usuario',
-        'viewer': 'Solo Lectura'
+        'user': 'Usuario'
     };
 
     const roleColors = {
+        'super_admin': 'bg-purple-100 text-purple-800',
         'admin': 'bg-red-100 text-red-800',
-        'user': 'bg-blue-100 text-blue-800',
-        'viewer': 'bg-gray-100 text-gray-800'
+        'user': 'bg-blue-100 text-blue-800'
     };
 
     useEffect(() => {
@@ -379,9 +379,9 @@ const UserManagement = ({ onClose }) => {
                                         onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option value="viewer">Solo Lectura</option>
                                         <option value="user">Usuario</option>
                                         <option value="admin">Administrador</option>
+                                        <option value="super_admin">Super Administrador</option>
                                     </select>
                                 </div>
                             </div>

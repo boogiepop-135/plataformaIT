@@ -12,9 +12,14 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     is_active = db.Column(db.Boolean(), nullable=False, default=True)
+    is_suspended = db.Column(db.Boolean(), nullable=False, default=False)
+    suspension_reason = db.Column(db.Text, nullable=True)
+    suspended_by = db.Column(
+        db.Integer, db.ForeignKey('user.id'), nullable=True)
+    suspended_at = db.Column(db.DateTime, nullable=True)
     name = db.Column(db.String(100), nullable=True)
-    # 'admin', 'user', 'viewer'
-    role = db.Column(db.String(50), nullable=False, default='viewer')
+    # 'super_admin', 'admin', 'hr', 'user'
+    role = db.Column(db.String(50), nullable=False, default='user')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime, nullable=True)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
@@ -34,6 +39,10 @@ class User(db.Model):
             "name": self.name,
             "role": self.role,
             "is_active": self.is_active,
+            "is_suspended": self.is_suspended,
+            "suspension_reason": self.suspension_reason,
+            "suspended_by": self.suspended_by,
+            "suspended_at": self.suspended_at.isoformat() if self.suspended_at else None,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "last_login": self.last_login.isoformat() if self.last_login else None,
             "created_by": self.created_by,
@@ -86,8 +95,16 @@ class Ticket(db.Model):
         db.Integer, db.ForeignKey('user.id'), nullable=True)
     requester_name = db.Column(db.String(100), nullable=True)
     requester_email = db.Column(db.String(120), nullable=True)
+    # Sistema de calificación
+    rating = db.Column(db.Integer, nullable=True)  # 1-3 estrellas
+    rating_comment = db.Column(db.Text, nullable=True)
+    rated_at = db.Column(db.DateTime, nullable=True)
+    rated_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
 
-    assignee = db.relationship("User", backref="assigned_tickets")
+    assignee = db.relationship("User", foreign_keys=[
+                               assigned_to], backref="assigned_tickets")
+    rater = db.relationship("User", foreign_keys=[
+                            rated_by], backref="rated_tickets")
 
     def serialize(self):
         return {
@@ -101,6 +118,10 @@ class Ticket(db.Model):
             "assigned_to": self.assigned_to,
             "requester_name": self.requester_name,
             "requester_email": self.requester_email,
+            "rating": self.rating,
+            "rating_comment": self.rating_comment,
+            "rated_at": self.rated_at.isoformat() if self.rated_at else None,
+            "rated_by": self.rated_by,
         }
 
 
@@ -233,6 +254,176 @@ class JournalEntry(db.Model):
             "location": self.location,
             "tags": self.tags.split(",") if self.tags else [],
             "attachments": self.attachments if self.attachments else [],
+        }
+
+
+class PaymentReminder(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    amount = db.Column(db.Float, nullable=True)
+    currency = db.Column(db.String(10), default='USD')
+    due_date = db.Column(db.DateTime, nullable=False)
+    # pending, paid, overdue, cancelled
+    status = db.Column(db.String(50), default='pending')
+    # monthly, quarterly, annually, one_time
+    recurrence = db.Column(db.String(50), default='one_time')
+    # Días antes de vencimiento para recordar
+    reminder_days = db.Column(db.Integer, default=7)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    user = db.relationship("User", backref="payment_reminders")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "amount": self.amount,
+            "currency": self.currency,
+            "due_date": self.due_date.isoformat() if self.due_date else None,
+            "status": self.status,
+            "recurrence": self.recurrence,
+            "reminder_days": self.reminder_days,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "user_id": self.user_id,
+        }
+
+
+class ServiceOrder(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    client_name = db.Column(db.String(200), nullable=False)
+    client_email = db.Column(db.String(120), nullable=True)
+    client_phone = db.Column(db.String(50), nullable=True)
+    # maintenance, installation, support, etc.
+    service_type = db.Column(db.String(100), nullable=False)
+    # pending, in_progress, completed, cancelled
+    status = db.Column(db.String(50), default='pending')
+    # low, medium, high, urgent
+    priority = db.Column(db.String(50), default='medium')
+    estimated_hours = db.Column(db.Float, nullable=True)
+    hourly_rate = db.Column(db.Float, nullable=True)
+    # JSON para almacenar el estado mensual {month_year: {completed: bool, completed_date: date}}
+    monthly_status = db.Column(db.JSON, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    assigned_to = db.Column(
+        db.Integer, db.ForeignKey('user.id'), nullable=True)
+    created_by = db.Column(
+        db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    assignee = db.relationship("User", foreign_keys=[
+                               assigned_to], backref="assigned_service_orders")
+    creator = db.relationship("User", foreign_keys=[
+                              created_by], backref="created_service_orders")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "client_name": self.client_name,
+            "client_email": self.client_email,
+            "client_phone": self.client_phone,
+            "service_type": self.service_type,
+            "status": self.status,
+            "priority": self.priority,
+            "estimated_hours": self.estimated_hours,
+            "hourly_rate": self.hourly_rate,
+            "monthly_status": self.monthly_status if self.monthly_status else {},
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "assigned_to": self.assigned_to,
+            "created_by": self.created_by,
+        }
+
+
+class MatrixHistory(db.Model):
+    """Historial de cambios en matrices"""
+    id = db.Column(db.Integer, primary_key=True)
+    matrix_id = db.Column(db.Integer, db.ForeignKey(
+        'matrix.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    # 'created', 'updated', 'deleted'
+    action = db.Column(db.String(50), nullable=False)
+    # JSON con los cambios específicos
+    changes = db.Column(db.JSON, nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    matrix = db.relationship("Matrix", backref="history")
+    user = db.relationship("User", backref="matrix_changes")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "matrix_id": self.matrix_id,
+            "user_id": self.user_id,
+            "action": self.action,
+            "changes": self.changes,
+            "timestamp": self.timestamp.isoformat() if self.timestamp else None,
+            "user_name": self.user.name if self.user else None
+        }
+
+
+class SystemNotification(db.Model):
+    """Notificaciones del sistema"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    # info, warning, error, success
+    notification_type = db.Column(db.String(50), default='info')
+    is_read = db.Column(db.Boolean(), default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime, nullable=True)  # Fecha de expiración
+
+    user = db.relationship("User", backref="notifications")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "title": self.title,
+            "message": self.message,
+            "notification_type": self.notification_type,
+            "is_read": self.is_read,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "expires_at": self.expires_at.isoformat() if self.expires_at else None
+        }
+
+
+class SystemBackup(db.Model):
+    """Registro de backups del sistema"""
+    id = db.Column(db.Integer, primary_key=True)
+    # 'automatic', 'manual'
+    backup_type = db.Column(db.String(50), nullable=False)
+    file_path = db.Column(db.String(500), nullable=True)
+    file_size = db.Column(db.BigInteger, nullable=True)  # Tamaño en bytes
+    # in_progress, completed, failed
+    status = db.Column(db.String(50), default='in_progress')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+
+    creator = db.relationship("User", backref="backups_created")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "backup_type": self.backup_type,
+            "file_path": self.file_path,
+            "file_size": self.file_size,
+            "status": self.status,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "created_by": self.created_by
         }
 
 

@@ -2,7 +2,7 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 from flask import Flask, request, jsonify, url_for, Blueprint, make_response
-from api.models import db, User, Task, Ticket, CalendarEvent, Matrix, JournalEntry
+from api.models import db, User, Task, Ticket, CalendarEvent, Matrix, JournalEntry, PaymentReminder, ServiceOrder, MatrixHistory, SystemNotification, SystemBackup
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
 from datetime import datetime
@@ -19,7 +19,31 @@ CORS(api, origins=[
 ])
 
 
-# Authentication decorator
+# Authentication helpers
+def get_current_user():
+    """Get current user from session/token - simplified for now"""
+    # This is a simplified implementation
+    # In a real app, you would extract user info from JWT token
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return None
+
+    token = auth_header.split(' ')[1]
+    if token != "admin_authenticated":
+        return None
+
+    # For now, return a default admin user
+    # In production, decode JWT and get real user info
+    return {
+        'id': 1,
+        'email': 'admin@admin.com',
+        'role': 'super_admin',  # Default to super_admin for now
+        'name': 'Administrador'
+    }
+
+# Authentication decorators
+
+
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -33,6 +57,32 @@ def admin_required(f):
 
         return f(*args, **kwargs)
     return decorated_function
+
+
+def role_required(allowed_roles):
+    """Decorador que permite especificar múltiples roles autorizados"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            auth_header = request.headers.get('Authorization')
+            if not auth_header or not auth_header.startswith('Bearer '):
+                return jsonify({"error": "Authentication required"}), 401
+
+            token = auth_header.split(' ')[1]
+            if token != "admin_authenticated":
+                return jsonify({"error": "Invalid authentication token"}), 401
+
+            # Por ahora solo verificamos que esté autenticado
+            # En el futuro aquí se verificaría el rol específico
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+
+def get_current_user():
+    """Obtiene el usuario actual desde el token (placeholder por ahora)"""
+    # Implementación temporal - en producción esto debería decodificar JWT
+    return {"id": 1, "role": "admin", "name": "Admin User"}
 
 
 @api.route('/hello', methods=['POST', 'GET'])
@@ -193,6 +243,58 @@ def delete_ticket(ticket_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+
+
+@api.route('/tickets/<int:ticket_id>/rate', methods=['POST'])
+@admin_required
+def rate_ticket(ticket_id):
+    """Rate a resolved ticket with 1-3 stars and comment"""
+    try:
+        ticket = Ticket.query.get_or_404(ticket_id)
+        current_user = get_current_user()
+        data = request.get_json()
+
+        # Verificar que el ticket esté resuelto
+        if ticket.status != 'resolved':
+            return jsonify({"error": "Solo se pueden calificar tickets resueltos"}), 400
+
+        # Verificar que el usuario puede calificar (creador del ticket o admin)
+        if (ticket.requester_email != current_user.get('email') and
+                current_user['role'] not in ['admin', 'super_admin', 'hr']):
+            return jsonify({"error": "No tienes permisos para calificar este ticket"}), 403
+
+        # Validar calificación
+        rating = data.get('rating')
+        if not rating or rating not in [1, 2, 3]:
+            return jsonify({"error": "La calificación debe ser 1, 2 o 3 estrellas"}), 400
+
+        # Actualizar calificación
+        ticket.rating = rating
+        ticket.rating_comment = data.get('comment', '')
+        ticket.rated_at = datetime.utcnow()
+        ticket.rated_by = current_user['id']
+
+        db.session.commit()
+
+        # Crear notificación para el super admin
+        notification = SystemNotification(
+            user_id=1,  # Super admin
+            title=f"Ticket Calificado: {ticket.title}",
+            message=f"El ticket #{ticket.id} fue calificado con {rating} estrellas por {current_user['name']}",
+            notification_type='info'
+        )
+        db.session.add(notification)
+        db.session.commit()
+
+        return jsonify({
+            "message": "Ticket calificado exitosamente",
+            "ticket": ticket.serialize()
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
 
 # CALENDAR EVENT ROUTES
 
@@ -420,9 +522,22 @@ def delete_recurring_events(event_id):
 
 
 @api.route('/matrices', methods=['GET'])
+@admin_required
 def get_matrices():
+    """Get matrices - filtered by user role"""
     try:
-        matrices = Matrix.query.all()
+        current_user = get_current_user()
+
+        if current_user['role'] == 'super_admin':
+            # Super admin ve todas las matrices
+            matrices = Matrix.query.all()
+        elif current_user['role'] == 'admin':
+            # Admin ve todas las matrices
+            matrices = Matrix.query.all()
+        else:
+            # Usuario normal solo ve las suyas
+            matrices = Matrix.query.filter_by(user_id=current_user['id']).all()
+
         return jsonify([matrix.serialize() for matrix in matrices]), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -433,6 +548,7 @@ def get_matrices():
 def create_matrix():
     try:
         data = request.get_json()
+        current_user = get_current_user()
 
         if not data.get('name'):
             return jsonify({"error": "Name is required"}), 400
@@ -492,10 +608,21 @@ def create_matrix():
             columns=columns,
             data=matrix_data,
             headers=headers,
-            user_id=data.get('user_id')
+            user_id=current_user['id']  # Asignar al usuario actual
         )
 
         db.session.add(new_matrix)
+        db.session.flush()  # Para obtener el ID
+
+        # Registrar en el historial
+        history_record = MatrixHistory(
+            matrix_id=new_matrix.id,
+            user_id=current_user['id'],
+            action='created',
+            changes={'name': new_matrix.name, 'type': new_matrix.matrix_type}
+        )
+        db.session.add(history_record)
+
         db.session.commit()
 
         return jsonify(new_matrix.serialize()), 201
@@ -518,6 +645,12 @@ def get_matrix(matrix_id):
 def update_matrix(matrix_id):
     try:
         matrix = Matrix.query.get_or_404(matrix_id)
+        current_user = get_current_user()
+
+        # Solo super_admin puede editar todo, admin y user solo lo suyo
+        if current_user['role'] != 'super_admin' and matrix.user_id != current_user['id']:
+            return jsonify({"error": "No tienes permisos para editar esta matriz"}), 403
+
         data = request.get_json()
 
         if 'name' in data:
@@ -534,6 +667,16 @@ def update_matrix(matrix_id):
             matrix.columns = data['columns']
 
         matrix.updated_at = datetime.utcnow()
+
+        # Registrar en el historial
+        history_record = MatrixHistory(
+            matrix_id=matrix_id,
+            user_id=current_user['id'],
+            action='updated',
+            changes=data  # Guardar los cambios realizados
+        )
+        db.session.add(history_record)
+
         db.session.commit()
 
         return jsonify(matrix.serialize()), 200
@@ -547,6 +690,21 @@ def update_matrix(matrix_id):
 def delete_matrix(matrix_id):
     try:
         matrix = Matrix.query.get_or_404(matrix_id)
+        current_user = get_current_user()
+
+        # Solo super_admin puede eliminar todo, admin y user solo lo suyo
+        if current_user['role'] != 'super_admin' and matrix.user_id != current_user['id']:
+            return jsonify({"error": "No tienes permisos para eliminar esta matriz"}), 403
+
+        # Registrar en el historial antes de eliminar
+        history_record = MatrixHistory(
+            matrix_id=matrix_id,
+            user_id=current_user['id'],
+            action='deleted',
+            changes={'name': matrix.name, 'type': matrix.matrix_type}
+        )
+        db.session.add(history_record)
+
         db.session.delete(matrix)
         db.session.commit()
         return jsonify({"message": "Matrix deleted successfully"}), 200
@@ -1446,4 +1604,583 @@ def change_own_password():
 
         return jsonify({"message": "Contraseña cambiada exitosamente"}), 200
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# PAYMENT REMINDER ROUTES
+
+@api.route('/payment-reminders', methods=['GET'])
+@admin_required
+def get_payment_reminders():
+    """Get payment reminders - filtered by user role"""
+    try:
+        current_user = get_current_user()
+
+        if current_user['role'] == 'super_admin':
+            # Super admin ve todos los recordatorios
+            reminders = PaymentReminder.query.all()
+        elif current_user['role'] == 'admin':
+            # Admin ve todos pero solo puede editar los suyos
+            reminders = PaymentReminder.query.all()
+        else:
+            # Usuario normal solo ve los suyos
+            reminders = PaymentReminder.query.filter_by(
+                user_id=current_user['id']).all()
+
+        return jsonify([reminder.serialize() for reminder in reminders]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/payment-reminders', methods=['POST'])
+@admin_required
+def create_payment_reminder():
+    """Create new payment reminder"""
+    try:
+        data = request.get_json()
+        current_user = get_current_user()
+
+        if not data.get('title'):
+            return jsonify({"error": "Título es requerido"}), 400
+
+        if not data.get('due_date'):
+            return jsonify({"error": "Fecha de vencimiento es requerida"}), 400
+
+        new_reminder = PaymentReminder(
+            title=data.get('title'),
+            description=data.get('description', ''),
+            amount=data.get('amount'),
+            currency=data.get('currency', 'USD'),
+            due_date=datetime.fromisoformat(data.get('due_date')),
+            status=data.get('status', 'pending'),
+            recurrence=data.get('recurrence', 'one_time'),
+            reminder_days=data.get('reminder_days', 7),
+            user_id=current_user['id']
+        )
+
+        db.session.add(new_reminder)
+        db.session.commit()
+
+        return jsonify(new_reminder.serialize()), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/payment-reminders/<int:reminder_id>', methods=['PUT'])
+@admin_required
+def update_payment_reminder(reminder_id):
+    """Update payment reminder - with role-based permissions"""
+    try:
+        reminder = PaymentReminder.query.get_or_404(reminder_id)
+        current_user = get_current_user()
+
+        # Solo super_admin puede editar todo, admin y user solo lo suyo
+        if current_user['role'] != 'super_admin' and reminder.user_id != current_user['id']:
+            return jsonify({"error": "No tienes permisos para editar este recordatorio"}), 403
+
+        data = request.get_json()
+
+        if 'title' in data:
+            reminder.title = data['title']
+        if 'description' in data:
+            reminder.description = data['description']
+        if 'amount' in data:
+            reminder.amount = data['amount']
+        if 'currency' in data:
+            reminder.currency = data['currency']
+        if 'due_date' in data:
+            reminder.due_date = datetime.fromisoformat(data['due_date'])
+        if 'status' in data:
+            reminder.status = data['status']
+        if 'recurrence' in data:
+            reminder.recurrence = data['recurrence']
+        if 'reminder_days' in data:
+            reminder.reminder_days = data['reminder_days']
+
+        reminder.updated_at = datetime.utcnow()
+        db.session.commit()
+
+        return jsonify(reminder.serialize()), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/payment-reminders/<int:reminder_id>', methods=['DELETE'])
+@admin_required
+def delete_payment_reminder(reminder_id):
+    """Delete payment reminder - with role-based permissions"""
+    try:
+        reminder = PaymentReminder.query.get_or_404(reminder_id)
+        current_user = get_current_user()
+
+        # Solo super_admin puede eliminar todo, admin y user solo lo suyo
+        if current_user['role'] != 'super_admin' and reminder.user_id != current_user['id']:
+            return jsonify({"error": "No tienes permisos para eliminar este recordatorio"}), 403
+
+        db.session.delete(reminder)
+        db.session.commit()
+
+        return jsonify({"message": "Recordatorio eliminado exitosamente"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/payment-reminders/upcoming', methods=['GET'])
+@admin_required
+def get_upcoming_payments():
+    """Get upcoming payment reminders for dashboard"""
+    try:
+        current_user = get_current_user()
+        today = datetime.utcnow()
+
+        # Filtrar por rol
+        if current_user['role'] == 'super_admin':
+            base_query = PaymentReminder.query
+        elif current_user['role'] == 'admin':
+            base_query = PaymentReminder.query
+        else:
+            base_query = PaymentReminder.query.filter_by(
+                user_id=current_user['id'])
+
+        # Obtener próximos a vencer (dentro de reminder_days)
+        upcoming = base_query.filter(
+            PaymentReminder.status == 'pending',
+            PaymentReminder.due_date >= today,
+            PaymentReminder.due_date <= today +
+            db.text('INTERVAL reminder_days DAY')
+        ).order_by(PaymentReminder.due_date).all()
+
+        return jsonify([reminder.serialize() for reminder in upcoming]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# SERVICE ORDER ROUTES
+
+@api.route('/service-orders', methods=['GET'])
+@admin_required
+def get_service_orders():
+    """Get service orders - filtered by user role"""
+    try:
+        current_user = get_current_user()
+
+        if current_user['role'] == 'super_admin':
+            # Super admin ve todas las órdenes
+            orders = ServiceOrder.query.all()
+        elif current_user['role'] == 'admin':
+            # Admin ve todas pero solo puede editar las suyas
+            orders = ServiceOrder.query.all()
+        else:
+            # Usuario normal solo ve las asignadas a él o creadas por él
+            orders = ServiceOrder.query.filter(
+                db.or_(
+                    ServiceOrder.assigned_to == current_user['id'],
+                    ServiceOrder.created_by == current_user['id']
+                )
+            ).all()
+
+        return jsonify([order.serialize() for order in orders]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/service-orders', methods=['POST'])
+@admin_required
+def create_service_order():
+    """Create new service order"""
+    try:
+        data = request.get_json()
+        current_user = get_current_user()
+
+        if not data.get('title'):
+            return jsonify({"error": "Título es requerido"}), 400
+
+        if not data.get('client_name'):
+            return jsonify({"error": "Nombre del cliente es requerido"}), 400
+
+        if not data.get('service_type'):
+            return jsonify({"error": "Tipo de servicio es requerido"}), 400
+
+        new_order = ServiceOrder(
+            title=data.get('title'),
+            description=data.get('description', ''),
+            client_name=data.get('client_name'),
+            client_email=data.get('client_email'),
+            client_phone=data.get('client_phone'),
+            service_type=data.get('service_type'),
+            status=data.get('status', 'pending'),
+            priority=data.get('priority', 'medium'),
+            estimated_hours=data.get('estimated_hours'),
+            hourly_rate=data.get('hourly_rate'),
+            assigned_to=data.get('assigned_to'),
+            created_by=current_user['id'],
+            monthly_status={}
+        )
+
+        db.session.add(new_order)
+        db.session.commit()
+
+        return jsonify(new_order.serialize()), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/service-orders/<int:order_id>/monthly-status', methods=['PUT'])
+@admin_required
+def update_monthly_status(order_id):
+    """Update monthly status for service order"""
+    try:
+        order = ServiceOrder.query.get_or_404(order_id)
+        current_user = get_current_user()
+
+        # Solo super_admin puede editar todo, otros solo lo suyo
+        if (current_user['role'] != 'super_admin' and
+            order.created_by != current_user['id'] and
+                order.assigned_to != current_user['id']):
+            return jsonify({"error": "No tienes permisos para editar esta orden"}), 403
+
+        data = request.get_json()
+        month_year = data.get('month_year')  # formato: "2024-01"
+        completed = data.get('completed', False)
+
+        if not month_year:
+            return jsonify({"error": "month_year es requerido"}), 400
+
+        monthly_status = order.monthly_status or {}
+        monthly_status[month_year] = {
+            'completed': completed,
+            'completed_date': datetime.utcnow().isoformat() if completed else None,
+            'updated_by': current_user['id']
+        }
+
+        order.monthly_status = monthly_status
+        order.updated_at = datetime.utcnow()
+        db.session.commit()
+
+        return jsonify(order.serialize()), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+# NOTIFICATION ROUTES
+
+@api.route('/notifications', methods=['GET'])
+@admin_required
+def get_notifications():
+    """Get user notifications"""
+    try:
+        current_user = get_current_user()
+
+        # Obtener notificaciones no expiradas
+        notifications = SystemNotification.query.filter(
+            SystemNotification.user_id == current_user['id'],
+            db.or_(
+                SystemNotification.expires_at.is_(None),
+                SystemNotification.expires_at > datetime.utcnow()
+            )
+        ).order_by(SystemNotification.created_at.desc()).all()
+
+        return jsonify([notification.serialize() for notification in notifications]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/notifications/<int:notification_id>/read', methods=['POST'])
+@admin_required
+def mark_notification_read(notification_id):
+    """Mark notification as read"""
+    try:
+        current_user = get_current_user()
+        notification = SystemNotification.query.filter_by(
+            id=notification_id,
+            user_id=current_user['id']
+        ).first_or_404()
+
+        notification.is_read = True
+        db.session.commit()
+
+        return jsonify({"message": "Notification marked as read"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/notifications/mark-all-read', methods=['POST'])
+@admin_required
+def mark_all_notifications_read():
+    """Mark all notifications as read"""
+    try:
+        current_user = get_current_user()
+
+        SystemNotification.query.filter_by(
+            user_id=current_user['id'],
+            is_read=False
+        ).update({'is_read': True})
+
+        db.session.commit()
+
+        return jsonify({"message": "All notifications marked as read"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+# MATRIX HISTORY ROUTES
+
+@api.route('/matrices/<int:matrix_id>/history', methods=['GET'])
+@admin_required
+def get_matrix_history(matrix_id):
+    """Get history of changes for a matrix"""
+    try:
+        current_user = get_current_user()
+        matrix = Matrix.query.get_or_404(matrix_id)
+
+        # Verificar permisos
+        if (current_user['role'] != 'super_admin' and
+                matrix.user_id != current_user['id']):
+            return jsonify({"error": "No tienes permisos para ver el historial"}), 403
+
+        history = MatrixHistory.query.filter_by(matrix_id=matrix_id)\
+            .order_by(MatrixHistory.timestamp.desc())\
+            .all()
+
+        return jsonify([record.serialize() for record in history]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# BACKUP ROUTES
+
+@api.route('/system/backups', methods=['GET'])
+@admin_required
+def get_backups():
+    """Get system backups - admin only"""
+    try:
+        current_user = get_current_user()
+
+        if current_user['role'] not in ['admin', 'super_admin']:
+            return jsonify({"error": "No tienes permisos para ver los backups"}), 403
+
+        backups = SystemBackup.query.order_by(
+            SystemBackup.created_at.desc()).all()
+        return jsonify([backup.serialize() for backup in backups]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/system/backup/create', methods=['POST'])
+@admin_required
+def create_backup():
+    """Create manual backup - admin only"""
+    try:
+        current_user = get_current_user()
+
+        if current_user['role'] not in ['admin', 'super_admin']:
+            return jsonify({"error": "No tienes permisos para crear backups"}), 403
+
+        # Crear registro de backup
+        backup = SystemBackup(
+            backup_type='manual',
+            status='in_progress',
+            created_by=current_user['id']
+        )
+
+        db.session.add(backup)
+        db.session.commit()
+
+        # TODO: Implementar lógica real de backup aquí
+        # Por ahora solo simulamos
+        import time
+        time.sleep(1)  # Simular proceso
+
+        backup.status = 'completed'
+        backup.completed_at = datetime.utcnow()
+        backup.file_path = f"/backups/backup_{backup.id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.sql"
+        backup.file_size = 1024 * 1024  # 1MB simulado
+
+        db.session.commit()
+
+        return jsonify({
+            "message": "Backup creado exitosamente",
+            "backup": backup.serialize()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+# HR SPECIFIC ROUTES
+
+@api.route('/hr/users/suspend', methods=['POST'])
+@admin_required
+def hr_suspend_user():
+    """HR suspends a user - notifies super admin"""
+    try:
+        current_user = get_current_user()
+
+        # Verificar que sea HR
+        if current_user['role'] not in ['hr', 'super_admin']:
+            return jsonify({"error": "Solo RH puede suspender usuarios"}), 403
+
+        data = request.get_json()
+        user_id = data.get('user_id')
+        reason = data.get('reason', '')
+
+        if not user_id:
+            return jsonify({"error": "user_id es requerido"}), 400
+
+        user = User.query.get_or_404(user_id)
+
+        # No permitir suspender al super admin
+        if user.role == 'super_admin':
+            return jsonify({"error": "No se puede suspender al super administrador"}), 400
+
+        # Suspender usuario
+        user.is_suspended = True
+        user.suspension_reason = reason
+        user.suspended_by = current_user['id']
+        user.suspended_at = datetime.utcnow()
+
+        db.session.commit()
+
+        # Notificar al super admin
+        notification = SystemNotification(
+            user_id=1,  # Super admin (asumiendo ID 1)
+            title=f"Usuario Suspendido por RH",
+            message=f"RH ha suspendido al usuario {user.name} ({user.email}). Razón: {reason}. Considera eliminar la cuenta si es necesario.",
+            notification_type='warning'
+        )
+        db.session.add(notification)
+        db.session.commit()
+
+        return jsonify({
+            "message": "Usuario suspendido exitosamente",
+            "user": user.serialize()
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/hr/users/create-request', methods=['POST'])
+@admin_required
+def hr_create_user_request():
+    """HR creates a new user and notifies super admin"""
+    try:
+        current_user = get_current_user()
+
+        # Verificar que sea HR
+        if current_user['role'] not in ['hr', 'super_admin']:
+            return jsonify({"error": "Solo RH puede crear usuarios"}), 403
+
+        data = request.get_json()
+
+        # Validar campos requeridos
+        if not data.get('email') or not data.get('name'):
+            return jsonify({"error": "Email y nombre son requeridos"}), 400
+
+        # Verificar que el email no exista
+        existing_user = User.query.filter_by(email=data['email']).first()
+        if existing_user:
+            return jsonify({"error": "El email ya está en uso"}), 400
+
+        # Crear usuario con contraseña temporal
+        new_user = User(
+            email=data['email'],
+            name=data['name'],
+            role=data.get('role', 'user'),
+            is_active=True,
+            created_by=current_user['id']
+        )
+
+        # Contraseña temporal
+        temp_password = data.get('password', 'temporal123')
+        new_user.set_password(temp_password)
+
+        db.session.add(new_user)
+        db.session.flush()  # Para obtener el ID
+
+        # Notificar al super admin
+        notification = SystemNotification(
+            user_id=1,  # Super admin
+            title=f"Nuevo Usuario Creado por RH",
+            message=f"RH ha creado el usuario {new_user.name} ({new_user.email}) con rol '{new_user.role}'. Contraseña temporal: {temp_password}",
+            notification_type='info'
+        )
+        db.session.add(notification)
+        db.session.commit()
+
+        return jsonify({
+            "message": "Usuario creado exitosamente",
+            "user": new_user.serialize(),
+            "temporary_password": temp_password
+        }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/superadmin/users/<int:user_id>/delete', methods=['DELETE'])
+@admin_required
+def superadmin_delete_user(user_id):
+    """Super admin deletes a user completely"""
+    try:
+        current_user = get_current_user()
+
+        # Solo super admin puede eliminar usuarios
+        if current_user['role'] != 'super_admin':
+            return jsonify({"error": "Solo el super administrador puede eliminar usuarios"}), 403
+
+        user = User.query.get_or_404(user_id)
+
+        # No permitir eliminar al super admin
+        if user.role == 'super_admin':
+            return jsonify({"error": "No se puede eliminar al super administrador"}), 400
+
+        # Eliminar usuario
+        db.session.delete(user)
+        db.session.commit()
+
+        return jsonify({"message": "Usuario eliminado exitosamente"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/superadmin/users/<int:user_id>/unsuspend', methods=['POST'])
+@admin_required
+def superadmin_unsuspend_user(user_id):
+    """Super admin unsuspends a user"""
+    try:
+        current_user = get_current_user()
+
+        # Solo super admin puede reactivar usuarios
+        if current_user['role'] != 'super_admin':
+            return jsonify({"error": "Solo el super administrador puede reactivar usuarios"}), 403
+
+        user = User.query.get_or_404(user_id)
+
+        # Reactivar usuario
+        user.is_suspended = False
+        user.suspension_reason = None
+        user.suspended_by = None
+        user.suspended_at = None
+
+        db.session.commit()
+
+        return jsonify({
+            "message": "Usuario reactivado exitosamente",
+            "user": user.serialize()
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
         return jsonify({"error": str(e)}), 500

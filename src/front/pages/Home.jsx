@@ -12,8 +12,12 @@ export const Home = () => {
 		tasks: { total: 0, completed: 0, inProgress: 0 },
 		tickets: { total: 0, open: 0, resolved: 0 },
 		events: { today: 0, thisWeek: 0 },
-		matrices: { total: 0 }
+		matrices: { total: 0 },
+		payments: { upcoming: 0, overdue: 0 },
+		serviceOrders: { pending: 0, inProgress: 0 }
 	})
+	const [upcomingPayments, setUpcomingPayments] = useState([])
+	const [overduePayments, setOverduePayments] = useState([])
 	const [storageInfo, setStorageInfo] = useState({
 		usage_percent: 85,
 		status: 'warning',
@@ -64,6 +68,34 @@ export const Home = () => {
 				console.error("Error loading journal data:", error)
 			}
 
+			// Load payment reminders data
+			let paymentsData = []
+			let upcomingPaymentsData = []
+			try {
+				const paymentsResponse = await fetch(BACKEND_URL + "/api/payment-reminders", { headers: getAuthHeaders() })
+				if (paymentsResponse.ok) {
+					paymentsData = await paymentsResponse.json()
+				}
+
+				const upcomingResponse = await fetch(BACKEND_URL + "/api/payment-reminders/upcoming", { headers: getAuthHeaders() })
+				if (upcomingResponse.ok) {
+					upcomingPaymentsData = await upcomingResponse.json()
+				}
+			} catch (error) {
+				console.error("Error loading payment reminders:", error)
+			}
+
+			// Load service orders data
+			let serviceOrdersData = []
+			try {
+				const ordersResponse = await fetch(BACKEND_URL + "/api/service-orders", { headers: getAuthHeaders() })
+				if (ordersResponse.ok) {
+					serviceOrdersData = await ordersResponse.json()
+				}
+			} catch (error) {
+				console.error("Error loading service orders:", error)
+			}
+
 			if (tasksResponse.ok && ticketsResponse.ok && eventsResponse.ok && matricesResponse.ok) {
 				const now = new Date()
 				const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -103,6 +135,18 @@ export const Home = () => {
 						}).length,
 						completed: journalData.filter(entry => entry.status === 'completed').length,
 						pending: journalData.filter(entry => entry.status === 'pending').length
+					},
+					payments: {
+						upcoming: upcomingPaymentsData.length,
+						overdue: paymentsData.filter(payment => {
+							return payment.status === 'pending' && new Date(payment.due_date) < new Date()
+						}).length,
+						total: paymentsData.length
+					},
+					serviceOrders: {
+						pending: serviceOrdersData.filter(order => order.status === 'pending').length,
+						inProgress: serviceOrdersData.filter(order => order.status === 'in_progress').length,
+						total: serviceOrdersData.length
 					}
 				})
 
@@ -110,6 +154,12 @@ export const Home = () => {
 				if (storageResponse.ok) {
 					setStorageInfo(storageData)
 				}
+
+				// Update payments state
+				setUpcomingPayments(upcomingPaymentsData.slice(0, 5)) // Solo los primeros 5
+				setOverduePayments(paymentsData.filter(payment => {
+					return payment.status === 'pending' && new Date(payment.due_date) < new Date()
+				}).slice(0, 5))
 			}
 
 		} catch (error) {
@@ -244,7 +294,7 @@ export const Home = () => {
 
 				{/* Stats Dashboard */}
 				<div className="px-6 py-8">
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
 						{/* Tasks Stats */}
 						<div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
 							<div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4">
@@ -348,7 +398,141 @@ export const Home = () => {
 								</div>
 							</div>
 						)}
+
+						{/* Payment Reminders Stats - Only show if authenticated */}
+						{isAuthenticated && (
+							<div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+								<div className="bg-gradient-to-r from-red-600 to-red-700 p-4">
+									<div className="flex items-center justify-between text-white">
+										<div>
+											<h3 className="text-2xl font-bold">{stats.payments?.upcoming || 0}</h3>
+											<p className="text-red-100">Pagos Próximos</p>
+										</div>
+										<div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+											<i className="fas fa-money-bill-wave text-xl"></i>
+										</div>
+									</div>
+								</div>
+								<div className="p-4">
+									<div className="flex justify-between text-sm">
+										<span className="text-gray-600 font-medium">📊 {stats.payments?.total || 0} total</span>
+										{stats.payments?.overdue > 0 && (
+											<span className="text-red-600 font-medium">⚠️ {stats.payments.overdue} vencidos</span>
+										)}
+									</div>
+								</div>
+							</div>
+						)}
+
+						{/* Service Orders Stats - Only show if authenticated */}
+						{isAuthenticated && (
+							<div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+								<div className="bg-gradient-to-r from-teal-600 to-teal-700 p-4">
+									<div className="flex items-center justify-between text-white">
+										<div>
+											<h3 className="text-2xl font-bold">{stats.serviceOrders?.pending || 0}</h3>
+											<p className="text-teal-100">Órdenes Pendientes</p>
+										</div>
+										<div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+											<i className="fas fa-clipboard-list text-xl"></i>
+										</div>
+									</div>
+								</div>
+								<div className="p-4">
+									<div className="flex justify-between text-sm">
+										<span className="text-orange-600 font-medium">🔄 {stats.serviceOrders?.inProgress || 0} en progreso</span>
+										<span className="text-gray-600 font-medium">📋 {stats.serviceOrders?.total || 0} total</span>
+									</div>
+								</div>
+							</div>
+						)}
 					</div>
+
+					{/* Notifications Section - Only show if authenticated */}
+					{isAuthenticated && (upcomingPayments.length > 0 || overduePayments.length > 0) && (
+						<div className="mb-8">
+							<h2 className="text-2xl font-bold text-gray-800 mb-6">🔔 Notificaciones Importantes</h2>
+							<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+								{/* Upcoming Payments */}
+								{upcomingPayments.length > 0 && (
+									<div className="bg-white rounded-2xl shadow-xl border border-yellow-200">
+										<div className="bg-gradient-to-r from-yellow-500 to-yellow-600 p-4 rounded-t-2xl">
+											<h3 className="text-white font-bold text-lg">
+												<i className="fas fa-exclamation-triangle mr-2"></i>
+												Pagos Próximos a Vencer
+											</h3>
+										</div>
+										<div className="p-4">
+											{upcomingPayments.map((payment, index) => (
+												<div key={payment.id} className={`${index > 0 ? 'border-t border-gray-100 pt-3 mt-3' : ''}`}>
+													<div className="flex justify-between items-start">
+														<div>
+															<h4 className="font-semibold text-gray-800">{payment.title}</h4>
+															{payment.amount && (
+																<p className="text-green-600 font-medium">{payment.currency} {payment.amount}</p>
+															)}
+															<p className="text-sm text-gray-600">
+																Vence: {new Date(payment.due_date).toLocaleDateString('es-ES')}
+															</p>
+														</div>
+														<div className="text-right">
+															<span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+																{Math.ceil((new Date(payment.due_date) - new Date()) / (1000 * 60 * 60 * 24))} días
+															</span>
+														</div>
+													</div>
+												</div>
+											))}
+											<div className="mt-4">
+												<Link to="/payment-reminders" className="text-yellow-600 hover:text-yellow-800 font-medium text-sm">
+													Ver todos los recordatorios →
+												</Link>
+											</div>
+										</div>
+									</div>
+								)}
+
+								{/* Overdue Payments */}
+								{overduePayments.length > 0 && (
+									<div className="bg-white rounded-2xl shadow-xl border border-red-200">
+										<div className="bg-gradient-to-r from-red-500 to-red-600 p-4 rounded-t-2xl">
+											<h3 className="text-white font-bold text-lg">
+												<i className="fas fa-times-circle mr-2"></i>
+												Pagos Vencidos
+											</h3>
+										</div>
+										<div className="p-4">
+											{overduePayments.map((payment, index) => (
+												<div key={payment.id} className={`${index > 0 ? 'border-t border-gray-100 pt-3 mt-3' : ''}`}>
+													<div className="flex justify-between items-start">
+														<div>
+															<h4 className="font-semibold text-gray-800">{payment.title}</h4>
+															{payment.amount && (
+																<p className="text-green-600 font-medium">{payment.currency} {payment.amount}</p>
+															)}
+															<p className="text-sm text-red-600 font-medium">
+																Venció: {new Date(payment.due_date).toLocaleDateString('es-ES')}
+															</p>
+														</div>
+														<div className="text-right">
+															<span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
+																VENCIDO
+															</span>
+														</div>
+													</div>
+												</div>
+											))}
+											<div className="mt-4">
+												<Link to="/payment-reminders" className="text-red-600 hover:text-red-800 font-medium text-sm">
+													Gestionar pagos vencidos →
+												</Link>
+											</div>
+										</div>
+									</div>
+								)}
+							</div>
+						</div>
+					)}
 
 					{/* Quick Actions */}
 					<div className="mb-8">
