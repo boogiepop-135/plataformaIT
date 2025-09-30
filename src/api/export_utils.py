@@ -4,7 +4,12 @@ Export utilities for generating PDF and Excel reports
 import io
 from datetime import datetime
 from flask import make_response
-import pandas as pd
+try:
+    import pandas as pd
+    PANDAS_AVAILABLE = True
+except ImportError:
+    PANDAS_AVAILABLE = False
+    pd = None
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
@@ -340,40 +345,62 @@ class ExportManager:
         # Serialize the data if needed
         if matrices_data and not isinstance(matrices_data[0], dict):
             matrices_data = self._serialize_data(matrices_data)
-        """Export matrices to Excel"""
-        # Prepare data for DataFrame
-        excel_data = []
-        for matrix in matrices_data:
-            created_date = datetime.fromisoformat(matrix['created_at'].replace(
-                'Z', '+00:00')).strftime('%d/%m/%Y %H:%M') if matrix.get('created_at') else 'N/A'
-            updated_date = datetime.fromisoformat(matrix['updated_at'].replace(
-                'Z', '+00:00')).strftime('%d/%m/%Y %H:%M') if matrix.get('updated_at') else 'N/A'
-
-            excel_data.append({
-                'ID': matrix.get('id', ''),
-                'Nombre': matrix.get('name', ''),
-                'Tipo': matrix.get('matrix_type', '').upper(),
-                'Descripción': matrix.get('description', ''),
-                'Filas': matrix.get('rows', 0),
-                'Columnas': matrix.get('columns', 0),
-                'Fecha Creación': created_date,
-                'Última Actualización': updated_date
-            })
-
-        # Create DataFrame
-        df = pd.DataFrame(excel_data)
-
-        # Create Excel file in memory
-        buffer = io.BytesIO()
-        with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-            df.to_excel(writer, sheet_name='Matrices', index=False)
-
-            # Get the workbook and worksheet objects
-            workbook = writer.book
-            worksheet = writer.sheets['Matrices']
-
-            # Apply formatting
-            for column in worksheet.columns:
+        
+        # Use direct openpyxl approach to avoid pandas/numpy issues
+        try:
+            from openpyxl import Workbook
+            from openpyxl.styles import Font, PatternFill, Alignment
+            
+            # Create workbook and worksheet
+            wb = Workbook()
+            ws = wb.active
+            ws.title = "Matrices"
+            
+            # Headers
+            headers = ['ID', 'Nombre', 'Tipo', 'Descripción', 'Filas', 'Columnas', 'Fecha Creación', 'Última Actualización']
+            
+            # Apply header styling
+            header_font = Font(bold=True, color="FFFFFF")
+            header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+            header_alignment = Alignment(horizontal="center", vertical="center")
+            
+            for col_num, header in enumerate(headers, 1):
+                cell = ws.cell(row=1, column=col_num)
+                cell.value = header
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.alignment = header_alignment
+            
+            # Add data rows
+            for row_num, matrix in enumerate(matrices_data, 2):
+                try:
+                    created_date = datetime.fromisoformat(matrix['created_at'].replace(
+                        'Z', '+00:00')).strftime('%d/%m/%Y %H:%M') if matrix.get('created_at') else 'N/A'
+                except:
+                    created_date = str(matrix.get('created_at', 'N/A'))
+                
+                try:
+                    updated_date = datetime.fromisoformat(matrix['updated_at'].replace(
+                        'Z', '+00:00')).strftime('%d/%m/%Y %H:%M') if matrix.get('updated_at') else 'N/A'
+                except:
+                    updated_date = str(matrix.get('updated_at', 'N/A'))
+                
+                row_data = [
+                    matrix.get('id', ''),
+                    matrix.get('name', ''),
+                    matrix.get('matrix_type', '').upper(),
+                    matrix.get('description', ''),
+                    matrix.get('rows', 0),
+                    matrix.get('columns', 0),
+                    created_date,
+                    updated_date
+                ]
+                
+                for col_num, value in enumerate(row_data, 1):
+                    ws.cell(row=row_num, column=col_num, value=value)
+            
+            # Auto-adjust column widths
+            for column in ws.columns:
                 max_length = 0
                 column_letter = column[0].column_letter
                 for cell in column:
@@ -383,10 +410,71 @@ class ExportManager:
                     except:
                         pass
                 adjusted_width = min(max_length + 2, 50)
-                worksheet.column_dimensions[column_letter].width = adjusted_width
+                ws.column_dimensions[column_letter].width = adjusted_width
+            
+            # Save to buffer
+            buffer = io.BytesIO()
+            wb.save(buffer)
+            buffer.seek(0)
+            return buffer
+            
+        except Exception as e:
+            # Fallback to pandas if openpyxl direct approach fails
+            if PANDAS_AVAILABLE:
+                excel_data = []
+                for matrix in matrices_data:
+                    try:
+                        created_date = datetime.fromisoformat(matrix['created_at'].replace(
+                            'Z', '+00:00')).strftime('%d/%m/%Y %H:%M') if matrix.get('created_at') else 'N/A'
+                    except:
+                        created_date = str(matrix.get('created_at', 'N/A'))
+                    
+                    try:
+                        updated_date = datetime.fromisoformat(matrix['updated_at'].replace(
+                            'Z', '+00:00')).strftime('%d/%m/%Y %H:%M') if matrix.get('updated_at') else 'N/A'
+                    except:
+                        updated_date = str(matrix.get('updated_at', 'N/A'))
 
-        buffer.seek(0)
-        return buffer
+                    excel_data.append({
+                        'ID': matrix.get('id', ''),
+                        'Nombre': matrix.get('name', ''),
+                        'Tipo': matrix.get('matrix_type', '').upper(),
+                        'Descripción': matrix.get('description', ''),
+                        'Filas': matrix.get('rows', 0),
+                        'Columnas': matrix.get('columns', 0),
+                        'Fecha Creación': created_date,
+                        'Última Actualización': updated_date
+                    })
+
+                # Create DataFrame
+                df = pd.DataFrame(excel_data)
+
+                # Create Excel file in memory
+                buffer = io.BytesIO()
+                with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                    df.to_excel(writer, sheet_name='Matrices', index=False)
+
+                    # Get the workbook and worksheet objects
+                    workbook = writer.book
+                    worksheet = writer.sheets['Matrices']
+
+                    # Apply formatting
+                    for column in worksheet.columns:
+                        max_length = 0
+                        column_letter = column[0].column_letter
+                        for cell in column:
+                            try:
+                                if len(str(cell.value)) > max_length:
+                                    max_length = len(str(cell.value))
+                            except:
+                                pass
+                        adjusted_width = min(max_length + 2, 50)
+                        worksheet.column_dimensions[column_letter].width = adjusted_width
+
+                buffer.seek(0)
+                return buffer
+            else:
+                raise Exception(f"Excel export failed and pandas not available: {str(e)}")
 
     def export_journal_pdf(self, journal_data, filename="journal_export"):
         """Export journal data to PDF format"""

@@ -108,17 +108,16 @@ export const Navbar = () => {
 													<i className="fas fa-users"></i>
 													<span>Gestión de Usuarios</span>
 												</button>
-												<button
+												<Link
+													to="/settings"
 													onClick={() => {
-														// Future: Add settings functionality
-														alert('Configuración del sistema (próximamente)');
 														document.getElementById('adminDropdown').classList.add('hidden');
 													}}
 													className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-600 transition-colors duration-150 flex items-center space-x-2"
 												>
 													<i className="fas fa-cogs"></i>
 													<span>Configuración</span>
-												</button>
+												</Link>
 											</div>
 											<div className="border-t border-gray-100">
 												<button

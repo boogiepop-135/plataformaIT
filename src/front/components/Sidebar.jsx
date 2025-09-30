@@ -19,6 +19,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
         { path: "/calendar", icon: "fas fa-calendar-alt", label: "Calendario", requireAuth: true },
         { path: "/matrices", icon: "fas fa-th", label: "Matrices", requireAuth: true },
         { path: "/journal", icon: "fas fa-book", label: "Bitácora", requireAuth: true },
+        { path: "/settings", icon: "fas fa-cogs", label: "Configuración", requireAuth: true },
         { path: "/demo", icon: "fas fa-flask", label: "Demo", requireAuth: false }
     ];
 

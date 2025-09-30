@@ -1215,7 +1215,7 @@ def export_health_check():
             import reportlab
             import openpyxl
             import pandas
-            
+
             return jsonify({
                 "status": "healthy",
                 "reportlab_version": reportlab.Version,
@@ -1233,6 +1233,7 @@ def export_health_check():
             "status": "unhealthy",
             "error": str(e)
         }), 500
+
 
 @api.route('/matrices/export/excel', methods=['GET'])
 @admin_required
@@ -1353,5 +1354,47 @@ def export_journal_excel():
             'Content-Disposition'] = f'attachment; filename=journal_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
 
         return response
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# SETTINGS ROUTES
+@api.route('/settings', methods=['GET'])
+@admin_required
+def get_settings():
+    """Get system settings"""
+    try:
+        # Default settings (in a real app, these would be stored in database)
+        default_settings = {
+            'systemName': 'Plataforma IT',
+            'systemDescription': 'Sistema integral de gestión para equipos de IT',
+            'enableNotifications': True,
+            'autoBackup': True,
+            'maintenanceMode': False,
+            'sessionTimeout': 60,
+            'maxFileSize': 10,
+            'dateFormat': 'DD/MM/YYYY',
+            'timeFormat': '24h'
+        }
+        
+        return jsonify(default_settings), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/settings', methods=['POST'])
+@admin_required
+def save_settings():
+    """Save system settings"""
+    try:
+        settings = request.get_json()
+        
+        # In a real application, these would be saved to database
+        # For now, we'll just return success
+        
+        return jsonify({
+            "message": "Configuración guardada exitosamente",
+            "settings": settings
+        }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
