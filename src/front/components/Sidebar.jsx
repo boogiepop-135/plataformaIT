@@ -32,6 +32,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
         {
             title: "Finanzas",
             items: [
+                { path: "/budget", icon: "fas fa-chart-line", label: "Presupuestos", requireAuth: true, financieroOnly: true },
                 { path: "/payment-reminders", icon: "fas fa-money-bill-wave", label: "Recordatorios", requireAuth: true },
                 { path: "/service-orders", icon: "fas fa-clipboard-list", label: "Órdenes", requireAuth: true },
             ]
@@ -40,9 +41,9 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
             title: "Usuario",
             items: [
                 { path: "/profile", icon: "fas fa-user-circle", label: "Mi Perfil", requireAuth: true },
-                { path: "/users", icon: "fas fa-users-gear", label: "Usuarios", requireAuth: true, adminOnly: true },
+                { path: "/users", icon: "fas fa-users-gear", label: "Usuarios", requireAuth: true, superAdminOnly: true },
                 { path: "/hr-management", icon: "fas fa-user-friends", label: "Gestión RH", requireAuth: true, hrOrSuperAdmin: true },
-                { path: "/settings", icon: "fas fa-gear", label: "Configuración", requireAuth: true, adminOnly: true },
+                { path: "/settings", icon: "fas fa-gear", label: "Configuración", requireAuth: true, superAdminOnly: true },
             ]
         },
         {
@@ -60,10 +61,13 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
             if (item.requireAuth && !isAuthenticated) {
                 return false;
             }
-            if (item.adminOnly && (!user || !['admin', 'super_admin'].includes(user.role))) {
+            if (item.superAdminOnly && (!user || user.role !== 'super_admin')) {
                 return false;
             }
-            if (item.hrOrSuperAdmin && (!user || !['hr', 'super_admin'].includes(user.role))) {
+            if (item.hrOrSuperAdmin && (!user || !['admin-rh-financiero', 'super_admin'].includes(user.role))) {
+                return false;
+            }
+            if (item.financieroOnly && (!user || !['admin-rh-financiero', 'super_admin'].includes(user.role))) {
                 return false;
             }
             return true;

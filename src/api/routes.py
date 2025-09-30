@@ -44,17 +44,40 @@ def get_current_user():
 # Authentication decorators
 
 
-def admin_required(f):
+def get_current_user():
+    """Obtiene el usuario actual desde el token"""
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return None
+
+    token = auth_header.split(' ')[1]
+    if token != "admin_authenticated":
+        return None
+
+    # Obtener el usuario de la base de datos
+    try:
+        user = User.query.filter_by(email="admin").first()
+        if user:
+            return {
+                "id": user.id,
+                "email": user.email,
+                "name": user.name,
+                "role": user.role
+            }
+    except:
+        pass
+    
+    # Fallback si no se encuentra en la DB
+    return {"id": 1, "role": "super_admin", "name": "Super Admin User", "email": "admin"}
+
+
+def auth_required(f):
+    """Decorador base que requiere autenticación"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
+        user = get_current_user()
+        if not user:
             return jsonify({"error": "Authentication required"}), 401
-
-        token = auth_header.split(' ')[1]
-        if token != "admin_authenticated":
-            return jsonify({"error": "Invalid authentication token"}), 401
-
         return f(*args, **kwargs)
     return decorated_function
 
@@ -64,25 +87,59 @@ def role_required(allowed_roles):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            auth_header = request.headers.get('Authorization')
-            if not auth_header or not auth_header.startswith('Bearer '):
+            user = get_current_user()
+            if not user:
                 return jsonify({"error": "Authentication required"}), 401
-
-            token = auth_header.split(' ')[1]
-            if token != "admin_authenticated":
-                return jsonify({"error": "Invalid authentication token"}), 401
-
-            # Por ahora solo verificamos que esté autenticado
-            # En el futuro aquí se verificaría el rol específico
+            
+            if isinstance(allowed_roles, str):
+                allowed_roles_list = [allowed_roles]
+            else:
+                allowed_roles_list = allowed_roles
+            
+            if user['role'] not in allowed_roles_list:
+                return jsonify({"error": "Insufficient permissions"}), 403
+            
             return f(*args, **kwargs)
         return decorated_function
     return decorator
 
 
-def get_current_user():
-    """Obtiene el usuario actual desde el token (placeholder por ahora)"""
-    # Implementación temporal - en producción esto debería decodificar JWT
-    return {"id": 1, "role": "admin", "name": "Admin User"}
+def super_admin_required(f):
+    """Solo super_admin puede acceder"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        user = get_current_user()
+        if not user:
+            return jsonify({"error": "Authentication required"}), 401
+        
+        if user['role'] != 'super_admin':
+            return jsonify({"error": "Super admin access required"}), 403
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def admin_or_super_required(f):
+    """admin-rh-financiero o super_admin pueden acceder"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        user = get_current_user()
+        if not user:
+            return jsonify({"error": "Authentication required"}), 401
+        
+        if user['role'] not in ['super_admin', 'admin-rh-financiero']:
+            return jsonify({"error": "Admin access required"}), 403
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+# Mantener admin_required para compatibilidad con código existente
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        return auth_required(f)(*args, **kwargs)
+    return decorated_function
 
 
 @api.route('/hello', methods=['POST', 'GET'])
@@ -818,20 +875,36 @@ def admin_login():
                     "expires_in": 3600
                 }), 200
 
-        # Fallback to hardcoded credentials for backward compatibility
+        # Fallback to hardcoded credentials for super admin
         if username == "admin" and password == "admin123":
-            return jsonify({
-                "success": True,
-                "message": "Login successful (fallback)",
-                "token": "admin_authenticated",
-                "user": {
-                    "id": 1,
-                    "email": "admin",
-                    "name": "Administrator",
-                    "role": "admin"
-                },
-                "expires_in": 3600
-            }), 200
+            # Verificar si existe en la base de datos
+            db_user = User.query.filter_by(email="admin").first()
+            if db_user:
+                return jsonify({
+                    "success": True,
+                    "message": "Login successful (super admin)",
+                    "token": "admin_authenticated",
+                    "user": {
+                        "id": db_user.id,
+                        "email": db_user.email,
+                        "name": db_user.name,
+                        "role": db_user.role
+                    },
+                    "expires_in": 3600
+                }), 200
+            else:
+                return jsonify({
+                    "success": True,
+                    "message": "Login successful (fallback)",
+                    "token": "admin_authenticated",
+                    "user": {
+                        "id": 1,
+                        "email": "admin",
+                        "name": "Super Administrator",
+                        "role": "super_admin"
+                    },
+                    "expires_in": 3600
+                }), 200
 
         return jsonify({"error": "Invalid credentials"}), 401
 
@@ -868,7 +941,12 @@ def verify_admin():
 @api.route('/auth/logout', methods=['POST'])
 def admin_logout():
     """Admin logout endpoint"""
-    return jsonify({"message": "Logged out successfully"}), 200
+    try:
+        # In a full implementation, you would invalidate the token here
+        # For now, we just return success and let the frontend handle cleanup
+        return jsonify({"success": True, "message": "Logged out successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # USER MANAGEMENT ROUTES (keeping the enhanced versions)
@@ -1474,9 +1552,9 @@ def get_users():
 
 
 @api.route('/users', methods=['POST'])
-@admin_required
+@super_admin_required
 def create_user():
-    """Create new user - admin only"""
+    """Create new user - super admin only"""
     try:
         data = request.get_json()
 
@@ -1489,11 +1567,17 @@ def create_user():
         if existing_user:
             return jsonify({"error": "El email ya está en uso"}), 400
 
+        # Validate role - super admin can create any role except another super_admin
+        valid_roles = ['admin-rh-financiero', 'usuario']
+        role = data.get('role', 'usuario')
+        if role not in valid_roles:
+            return jsonify({"error": f"Rol inválido. Roles disponibles: {', '.join(valid_roles)}"}), 400
+
         # Create new user with password hashing
         user = User(
             email=data['email'],
             name=data.get('name', ''),
-            role=data.get('role', 'user'),
+            role=role,
             is_active=data.get('is_active', True)
         )
         user.set_password(data['password'])
@@ -2183,4 +2267,58 @@ def superadmin_unsuspend_user(user_id):
 
     except Exception as e:
         db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+# BUDGET MODULE ROUTES
+
+@api.route('/budget/data', methods=['GET'])
+@role_required(['super_admin', 'admin-rh-financiero'])
+def get_budget_data():
+    """Get budget data for financial module"""
+    try:
+        current_user = get_current_user()
+        if not current_user:
+            return jsonify({"error": "Usuario no autenticado"}), 401
+        
+        # Return basic budget configuration
+        budget_config = {
+            "ventas_por_mes": {
+                "agosto": 3506579,
+                "septiembre": 3462804,
+                "octubre": 3505000,
+                "noviembre": 3250000,
+                "diciembre": 3095000,
+                "promedio": 3363877
+            },
+            "areas_presupuesto": [
+                {
+                    "nombre": "Costo de Ventas",
+                    "categoria": "Compras Centros",
+                    "porcentaje": 35.0,
+                    "descripcion": "Materia prima, empaque y retail"
+                },
+                {
+                    "nombre": "Sueldos y Prestaciones",
+                    "categoria": "Recursos Humanos",
+                    "porcentaje": 21.0,
+                    "descripcion": "Nómina, IMSS y provisiones"
+                },
+                {
+                    "nombre": "Impuestos",
+                    "categoria": "Fiscal",
+                    "porcentaje": 10.0,
+                    "descripcion": "ISR, IVA y otros impuestos"
+                }
+                # Más áreas pueden agregarse aquí
+            ],
+            "user_permissions": {
+                "can_edit": current_user['role'] == 'super_admin',
+                "can_view": current_user['role'] in ['super_admin', 'admin-rh-financiero']
+            }
+        }
+        
+        return jsonify(budget_config), 200
+        
+    except Exception as e:
         return jsonify({"error": str(e)}), 500

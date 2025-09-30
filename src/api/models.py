@@ -18,8 +18,8 @@ class User(db.Model):
         db.Integer, db.ForeignKey('user.id'), nullable=True)
     suspended_at = db.Column(db.DateTime, nullable=True)
     name = db.Column(db.String(100), nullable=True)
-    # 'super_admin', 'admin', 'hr', 'user'
-    role = db.Column(db.String(50), nullable=False, default='user')
+    # 'super_admin', 'admin-rh-financiero', 'usuario'
+    role = db.Column(db.String(50), nullable=False, default='usuario')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime, nullable=True)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)

@@ -20,6 +20,7 @@ import UserManagement from "./pages/UserManagement";
 import PaymentReminders from "./pages/PaymentReminders";
 import ServiceOrders from "./pages/ServiceOrders";
 import HRManagement from "./components/HRManagement";
+import BudgetModule from "./pages/BudgetModule";
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
@@ -47,6 +48,7 @@ export const router = createBrowserRouter(
       <Route path="/hr-management" element={<HRManagement />} />
       <Route path="/payment-reminders" element={<PaymentReminders />} />
       <Route path="/service-orders" element={<ServiceOrders />} />
+      <Route path="/budget" element={<BudgetModule />} />
     </Route>
   )
 );
