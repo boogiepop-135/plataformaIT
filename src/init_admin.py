@@ -53,13 +53,13 @@ def init_admin_user():
             # Create new admin user
             admin_user = User(
                 email="admin",
-                password="admin123",  # Default password
                 name="Administrator",
                 role="admin",
                 is_active=True,
                 created_at=datetime.utcnow(),
                 created_by=None  # Self-created
             )
+            admin_user.set_password("admin123")  # Use hash method
 
             db.session.add(admin_user)
             db.session.commit()

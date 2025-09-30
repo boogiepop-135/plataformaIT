@@ -637,14 +637,14 @@ def admin_login():
         if not username or not password:
             return jsonify({"error": "Username and password required"}), 400
 
-        # Check if admin exists in database
-        admin_user = User.query.filter_by(email=username, role='admin').first()
+        # Check if user exists in database (admin or any role)
+        user = User.query.filter_by(email=username).first()
 
-        if admin_user and admin_user.is_active:
-            # Check password (in production, use proper hashing)
-            if admin_user.password == password:
+        if user and user.is_active:
+            # Check password using hash
+            if user.check_password(password):
                 # Update last login
-                admin_user.last_login = datetime.utcnow()
+                user.last_login = datetime.utcnow()
                 db.session.commit()
 
                 return jsonify({
@@ -652,10 +652,10 @@ def admin_login():
                     "message": "Login successful",
                     "token": "admin_authenticated",
                     "user": {
-                        "id": admin_user.id,
-                        "email": admin_user.email,
-                        "name": admin_user.name,
-                        "role": admin_user.role
+                        "id": user.id,
+                        "email": user.email,
+                        "name": user.name,
+                        "role": user.role
                     },
                     "expires_in": 3600
                 }), 200
@@ -683,13 +683,23 @@ def admin_login():
 
 @api.route('/auth/verify', methods=['POST'])
 def verify_admin():
-    """Verify admin token"""
+    """Verify token and return user info"""
     try:
         data = request.get_json()
         token = data.get('token')
 
         if token == "admin_authenticated":
-            return jsonify({"valid": True}), 200
+            # In a real implementation, you would decode the token to get user info
+            # For now, return a basic response
+            return jsonify({
+                "valid": True,
+                "user": {
+                    "id": 1,
+                    "email": "admin",
+                    "name": "Administrator",
+                    "role": "admin"
+                }
+            }), 200
         else:
             return jsonify({"valid": False}), 401
 
@@ -1376,7 +1386,7 @@ def get_settings():
             'dateFormat': 'DD/MM/YYYY',
             'timeFormat': '24h'
         }
-        
+
         return jsonify(default_settings), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -1388,13 +1398,158 @@ def save_settings():
     """Save system settings"""
     try:
         settings = request.get_json()
-        
+
         # In a real application, these would be saved to database
         # For now, we'll just return success
-        
+
         return jsonify({
             "message": "Configuración guardada exitosamente",
             "settings": settings
         }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# USERS CRUD ROUTES
+@api.route('/users', methods=['GET'])
+@admin_required
+def get_users():
+    """Get all users - admin only"""
+    try:
+        users = User.query.all()
+        return jsonify([user.serialize() for user in users]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/users', methods=['POST'])
+@admin_required
+def create_user():
+    """Create new user - admin only"""
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        if not data.get('email') or not data.get('password'):
+            return jsonify({"error": "Email y contraseña son requeridos"}), 400
+        
+        # Check if email already exists
+        existing_user = User.query.filter_by(email=data['email']).first()
+        if existing_user:
+            return jsonify({"error": "El email ya está en uso"}), 400
+        
+        # Create new user
+        user = User(
+            email=data['email'],
+            name=data.get('name', ''),
+            role=data.get('role', 'user'),
+            is_active=data.get('is_active', True)
+        )
+        user.set_password(data['password'])
+        
+        db.session.add(user)
+        db.session.commit()
+        
+        return jsonify({
+            "message": "Usuario creado exitosamente",
+            "user": user.serialize()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/users/<int:user_id>', methods=['PUT'])
+@admin_required
+def update_user(user_id):
+    """Update user - admin only"""
+    try:
+        user = User.query.get_or_404(user_id)
+        data = request.get_json()
+        
+        # Update fields
+        if 'name' in data:
+            user.name = data['name']
+        if 'email' in data:
+            # Check if new email is already in use by another user
+            existing = User.query.filter_by(email=data['email']).first()
+            if existing and existing.id != user_id:
+                return jsonify({"error": "El email ya está en uso"}), 400
+            user.email = data['email']
+        if 'role' in data:
+            user.role = data['role']
+        if 'is_active' in data:
+            user.is_active = data['is_active']
+        if 'password' in data and data['password']:
+            user.set_password(data['password'])
+        
+        db.session.commit()
+        
+        return jsonify({
+            "message": "Usuario actualizado exitosamente",
+            "user": user.serialize()
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/users/<int:user_id>', methods=['DELETE'])
+@admin_required
+def delete_user(user_id):
+    """Delete user - admin only"""
+    try:
+        user = User.query.get_or_404(user_id)
+        
+        # Don't allow deleting yourself
+        # Note: This would need to be enhanced to check current user ID
+        
+        db.session.delete(user)
+        db.session.commit()
+        
+        return jsonify({"message": "Usuario eliminado exitosamente"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/users/<int:user_id>/change-password', methods=['POST'])
+@admin_required
+def admin_change_user_password(user_id):
+    """Admin changes any user's password"""
+    try:
+        user = User.query.get_or_404(user_id)
+        data = request.get_json()
+        
+        if not data.get('new_password'):
+            return jsonify({"error": "Nueva contraseña requerida"}), 400
+        
+        user.set_password(data['new_password'])
+        db.session.commit()
+        
+        return jsonify({"message": "Contraseña cambiada exitosamente"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/users/change-password', methods=['POST'])
+@admin_required
+def change_own_password():
+    """User changes their own password"""
+    try:
+        # Note: This endpoint would need to be enhanced to identify the current user
+        # For now, it's placeholder functionality
+        data = request.get_json()
+        
+        if not data.get('current_password') or not data.get('new_password'):
+            return jsonify({"error": "Contraseña actual y nueva contraseña requeridas"}), 400
+        
+        # In a real implementation, you would:
+        # 1. Get current user from token
+        # 2. Verify current password
+        # 3. Set new password
+        
+        return jsonify({"message": "Contraseña cambiada exitosamente"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

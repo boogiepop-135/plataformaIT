@@ -15,6 +15,7 @@ export const AuthProvider = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [token, setToken] = useState(null);
+    const [user, setUser] = useState(null);
 
     useEffect(() => {
         // Check if user is already authenticated
@@ -41,21 +42,25 @@ export const AuthProvider = ({ children }) => {
                 if (data.valid) {
                     setToken(tokenToVerify);
                     setIsAuthenticated(true);
+                    setUser(data.user || null);
                 } else {
                     localStorage.removeItem('admin_token');
                     setToken(null);
                     setIsAuthenticated(false);
+                    setUser(null);
                 }
             } else {
                 localStorage.removeItem('admin_token');
                 setToken(null);
                 setIsAuthenticated(false);
+                setUser(null);
             }
         } catch (error) {
             console.error('Token verification failed:', error);
             localStorage.removeItem('admin_token');
             setToken(null);
             setIsAuthenticated(false);
+            setUser(null);
         } finally {
             setIsLoading(false);
         }
@@ -76,6 +81,7 @@ export const AuthProvider = ({ children }) => {
                 if (data.success) {
                     setToken(data.token);
                     setIsAuthenticated(true);
+                    setUser(data.user || null);
                     localStorage.setItem('admin_token', data.token);
                     return { success: true };
                 }
@@ -103,6 +109,7 @@ export const AuthProvider = ({ children }) => {
         } finally {
             setToken(null);
             setIsAuthenticated(false);
+            setUser(null);
             localStorage.removeItem('admin_token');
         }
     };
@@ -123,6 +130,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated,
         isLoading,
         token,
+        user,
         login,
         logout,
         getAuthHeaders,

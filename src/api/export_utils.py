@@ -345,32 +345,35 @@ class ExportManager:
         # Serialize the data if needed
         if matrices_data and not isinstance(matrices_data[0], dict):
             matrices_data = self._serialize_data(matrices_data)
-        
+
         # Use direct openpyxl approach to avoid pandas/numpy issues
         try:
             from openpyxl import Workbook
             from openpyxl.styles import Font, PatternFill, Alignment
-            
+
             # Create workbook and worksheet
             wb = Workbook()
             ws = wb.active
             ws.title = "Matrices"
-            
+
             # Headers
-            headers = ['ID', 'Nombre', 'Tipo', 'Descripción', 'Filas', 'Columnas', 'Fecha Creación', 'Última Actualización']
-            
+            headers = ['ID', 'Nombre', 'Tipo', 'Descripción', 'Filas',
+                       'Columnas', 'Fecha Creación', 'Última Actualización']
+
             # Apply header styling
             header_font = Font(bold=True, color="FFFFFF")
-            header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
-            header_alignment = Alignment(horizontal="center", vertical="center")
-            
+            header_fill = PatternFill(
+                start_color="366092", end_color="366092", fill_type="solid")
+            header_alignment = Alignment(
+                horizontal="center", vertical="center")
+
             for col_num, header in enumerate(headers, 1):
                 cell = ws.cell(row=1, column=col_num)
                 cell.value = header
                 cell.font = header_font
                 cell.fill = header_fill
                 cell.alignment = header_alignment
-            
+
             # Add data rows
             for row_num, matrix in enumerate(matrices_data, 2):
                 try:
@@ -378,13 +381,13 @@ class ExportManager:
                         'Z', '+00:00')).strftime('%d/%m/%Y %H:%M') if matrix.get('created_at') else 'N/A'
                 except:
                     created_date = str(matrix.get('created_at', 'N/A'))
-                
+
                 try:
                     updated_date = datetime.fromisoformat(matrix['updated_at'].replace(
                         'Z', '+00:00')).strftime('%d/%m/%Y %H:%M') if matrix.get('updated_at') else 'N/A'
                 except:
                     updated_date = str(matrix.get('updated_at', 'N/A'))
-                
+
                 row_data = [
                     matrix.get('id', ''),
                     matrix.get('name', ''),
@@ -395,10 +398,10 @@ class ExportManager:
                     created_date,
                     updated_date
                 ]
-                
+
                 for col_num, value in enumerate(row_data, 1):
                     ws.cell(row=row_num, column=col_num, value=value)
-            
+
             # Auto-adjust column widths
             for column in ws.columns:
                 max_length = 0
@@ -411,13 +414,13 @@ class ExportManager:
                         pass
                 adjusted_width = min(max_length + 2, 50)
                 ws.column_dimensions[column_letter].width = adjusted_width
-            
+
             # Save to buffer
             buffer = io.BytesIO()
             wb.save(buffer)
             buffer.seek(0)
             return buffer
-            
+
         except Exception as e:
             # Fallback to pandas if openpyxl direct approach fails
             if PANDAS_AVAILABLE:
@@ -428,7 +431,7 @@ class ExportManager:
                             'Z', '+00:00')).strftime('%d/%m/%Y %H:%M') if matrix.get('created_at') else 'N/A'
                     except:
                         created_date = str(matrix.get('created_at', 'N/A'))
-                    
+
                     try:
                         updated_date = datetime.fromisoformat(matrix['updated_at'].replace(
                             'Z', '+00:00')).strftime('%d/%m/%Y %H:%M') if matrix.get('updated_at') else 'N/A'
@@ -474,7 +477,8 @@ class ExportManager:
                 buffer.seek(0)
                 return buffer
             else:
-                raise Exception(f"Excel export failed and pandas not available: {str(e)}")
+                raise Exception(
+                    f"Excel export failed and pandas not available: {str(e)}")
 
     def export_journal_pdf(self, journal_data, filename="journal_export"):
         """Export journal data to PDF format"""

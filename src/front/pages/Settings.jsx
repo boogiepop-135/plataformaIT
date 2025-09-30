@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth.jsx';
 import BACKEND_URL from '../config/backend.js';
 
 const Settings = () => {
-    const { isAuthenticated, getAuthHeaders } = useAuth();
+    const { isAuthenticated, getAuthHeaders, user } = useAuth();
     const [settings, setSettings] = useState({
         systemName: 'Plataforma IT',
         systemDescription: 'Sistema integral de gestión para equipos de IT',
@@ -67,6 +67,19 @@ const Settings = () => {
         }));
     };
 
+    if (!isAuthenticated || !user || user.role !== 'admin') {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+                <div className="text-center max-w-md mx-auto p-8">
+                    <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                        <i className="fas fa-shield-alt text-white text-3xl"></i>
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-4">Acceso solo para administradores</h2>
+                    <p className="text-gray-600 mb-6 leading-relaxed">Esta sección solo está disponible para usuarios con rol <b>admin</b>.</p>
+                </div>
+            </div>
+        );
+    }
     return (
         <ProtectedRoute>
             <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -91,7 +104,7 @@ const Settings = () => {
                 <div className="px-6 py-8">
                     <div className="max-w-4xl mx-auto">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            
+
                             {/* General Settings */}
                             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
                                 <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
@@ -109,7 +122,7 @@ const Settings = () => {
                                             type="text"
                                             value={settings.systemName}
                                             onChange={(e) => handleChange('systemName', e.target.value)}
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                                         />
                                     </div>
 
@@ -121,7 +134,7 @@ const Settings = () => {
                                             value={settings.systemDescription}
                                             onChange={(e) => handleChange('systemDescription', e.target.value)}
                                             rows={3}
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                                         />
                                     </div>
 
@@ -132,7 +145,7 @@ const Settings = () => {
                                         <select
                                             value={settings.dateFormat}
                                             onChange={(e) => handleChange('dateFormat', e.target.value)}
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                                         >
                                             <option value="DD/MM/YYYY">DD/MM/YYYY</option>
                                             <option value="MM/DD/YYYY">MM/DD/YYYY</option>
@@ -147,7 +160,7 @@ const Settings = () => {
                                         <select
                                             value={settings.timeFormat}
                                             onChange={(e) => handleChange('timeFormat', e.target.value)}
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                                         >
                                             <option value="24h">24 Horas</option>
                                             <option value="12h">12 Horas (AM/PM)</option>
@@ -175,7 +188,7 @@ const Settings = () => {
                                             max="480"
                                             value={settings.sessionTimeout}
                                             onChange={(e) => handleChange('sessionTimeout', parseInt(e.target.value))}
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                                         />
                                     </div>
 
@@ -189,7 +202,7 @@ const Settings = () => {
                                             max="100"
                                             value={settings.maxFileSize}
                                             onChange={(e) => handleChange('maxFileSize', parseInt(e.target.value))}
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                                         />
                                     </div>
 
@@ -251,11 +264,10 @@ const Settings = () => {
                             <button
                                 onClick={handleSave}
                                 disabled={loading}
-                                className={`px-8 py-4 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center space-x-3 ${
-                                    saved 
-                                        ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700' 
-                                        : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
-                                }`}
+                                className={`px-8 py-4 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center space-x-3 ${saved
+                                    ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'
+                                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
+                                    }`}
                             >
                                 {loading ? (
                                     <>

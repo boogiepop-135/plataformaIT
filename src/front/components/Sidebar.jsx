@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.jsx";
 
 export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
-    const { isAuthenticated, logout } = useAuth();
+    const { isAuthenticated, logout, user } = useAuth();
     const location = useLocation();
     const [showUserManagement, setShowUserManagement] = useState(false);
 
@@ -19,14 +19,19 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
         { path: "/calendar", icon: "fas fa-calendar-alt", label: "Calendario", requireAuth: true },
         { path: "/matrices", icon: "fas fa-th", label: "Matrices", requireAuth: true },
         { path: "/journal", icon: "fas fa-book", label: "Bitácora", requireAuth: true },
-        { path: "/settings", icon: "fas fa-cogs", label: "Configuración", requireAuth: true },
+        { path: "/profile", icon: "fas fa-user", label: "Mi Perfil", requireAuth: true },
+        { path: "/users", icon: "fas fa-users-cog", label: "Gestión de Usuarios", requireAuth: true, adminOnly: true },
+        { path: "/settings", icon: "fas fa-cogs", label: "Configuración", requireAuth: true, adminOnly: true },
         { path: "/demo", icon: "fas fa-flask", label: "Demo", requireAuth: false }
     ];
 
-    // Filter navigation items based on authentication status
+    // Filter navigation items based on authentication status and role
     const navItems = allNavItems.filter(item => {
         if (item.requireAuth && !isAuthenticated) {
             return false; // Hide protected routes if not authenticated
+        }
+        if (item.adminOnly && (!user || user.role !== 'admin')) {
+            return false; // Hide admin-only routes if not admin
         }
         return true;
     });

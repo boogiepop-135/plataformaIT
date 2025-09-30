@@ -118,6 +118,22 @@ export const Navbar = () => {
 													<i className="fas fa-cogs"></i>
 													<span>Configuración</span>
 												</Link>
+												<Link
+													to="/profile"
+													className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-600 transition-colors duration-150 flex items-center space-x-2"
+													onClick={() => document.getElementById('adminDropdown').classList.add('hidden')}
+												>
+													<i className="fas fa-user"></i>
+													<span>Mi Perfil</span>
+												</Link>
+												<Link
+													to="/users"
+													className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-600 transition-colors duration-150 flex items-center space-x-2"
+													onClick={() => document.getElementById('adminDropdown').classList.add('hidden')}
+												>
+													<i className="fas fa-users-cog"></i>
+													<span>Gestión de Usuarios</span>
+												</Link>
 											</div>
 											<div className="border-t border-gray-100">
 												<button

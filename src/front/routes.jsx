@@ -15,6 +15,8 @@ import { Demo } from "./pages/Demo";
 import MatrixManager from "./pages/MatrixManager";
 import Journal from "./pages/Journal";
 import Settings from "./pages/Settings";
+import Profile from "./pages/Profile";
+import UserManagement from "./pages/UserManagement";
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
@@ -37,6 +39,8 @@ export const router = createBrowserRouter(
       <Route path="/settings" element={<Settings />} />
       <Route path="/single/:theId" element={<Single />} />  {/* Dynamic route for single items */}
       <Route path="/demo" element={<Demo />} />
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/users" element={<UserManagement />} />
     </Route>
   )
 );
