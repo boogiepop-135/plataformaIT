@@ -6,9 +6,23 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     const { isAuthenticated, logout, user } = useAuth();
     const location = useLocation();
     const [showUserManagement, setShowUserManagement] = useState(false);
+    const [collapsedSections, setCollapsedSections] = useState({
+        "Principal": false,
+        "Gestión": false,
+        "Finanzas": false,
+        "Usuario": false,
+        "Desarrollo": false
+    });
 
     const handleLogout = async () => {
         await logout();
+    };
+
+    const toggleSection = (sectionTitle) => {
+        setCollapsedSections(prev => ({
+            ...prev,
+            [sectionTitle]: !prev[sectionTitle]
+        }));
     };
 
     // Define navigation items with authentication requirements and categories
@@ -93,27 +107,53 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
 
     return (
         <>
-            {/* Ultra-Modern Sidebar */}
-            <div className={`fixed left-0 top-0 h-full bg-white/90 backdrop-blur-2xl shadow-2xl border-r border-gray-200/50 transition-all duration-300 ease-in-out z-50 ${isCollapsed ? 'w-16' : 'w-64'
+            {/* Ultra-Modern Sidebar - Mejor visibilidad */}
+            <div className={`fixed left-0 top-0 h-full bg-white shadow-2xl border-r border-gray-300 transition-all duration-300 ease-in-out z-50 ${isCollapsed ? 'w-16' : 'w-64'
                 }`}>
 
-                {/* Modern Logo Section - Compacto */}
+                {/* Modern Logo Section - Con logout */}
                 <div className="p-4 border-b border-gray-200/50">
-                    <div className="flex items-center space-x-3">
-                        <div className="relative">
-                            <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 via-purple-500 to-blue-500 rounded-lg shadow-lg flex items-center justify-center">
-                                <i className="fas fa-laptop-code text-white text-sm"></i>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                            <div className="relative">
+                                <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 via-purple-500 to-blue-500 rounded-lg shadow-lg flex items-center justify-center">
+                                    <i className="fas fa-laptop-code text-white text-sm"></i>
+                                </div>
+                                <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border border-white animate-pulse"></div>
                             </div>
-                            <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border border-white animate-pulse"></div>
+                            {!isCollapsed && (
+                                <div className="overflow-hidden">
+                                    <h1 className="text-lg font-black bg-gradient-to-r from-gray-900 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                                        Plataforma IT
+                                    </h1>
+                                    <p className="text-xs text-gray-500 font-medium tracking-wide">
+                                        Management Suite
+                                    </p>
+                                </div>
+                            )}
                         </div>
-                        {!isCollapsed && (
-                            <div className="overflow-hidden">
-                                <h1 className="text-lg font-black bg-gradient-to-r from-gray-900 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                                    Plataforma IT
-                                </h1>
-                                <p className="text-xs text-gray-500 font-medium tracking-wide">
-                                    Management Suite
-                                </p>
+                        
+                        {/* Logout Button - Top Right */}
+                        {isAuthenticated && !isCollapsed && (
+                            <button
+                                onClick={handleLogout}
+                                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 group"
+                                title="Cerrar Sesión"
+                            >
+                                <i className="fas fa-sign-out-alt text-sm group-hover:scale-110 transition-transform"></i>
+                            </button>
+                        )}
+                        
+                        {/* Logout for collapsed state */}
+                        {isAuthenticated && isCollapsed && (
+                            <div className="absolute top-4 right-4">
+                                <button
+                                    onClick={handleLogout}
+                                    className="p-1 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-all duration-200 group"
+                                    title="Cerrar Sesión"
+                                >
+                                    <i className="fas fa-sign-out-alt text-xs group-hover:scale-110 transition-transform"></i>
+                                </button>
                             </div>
                         )}
                     </div>
@@ -127,22 +167,26 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                     <i className={`fas ${isCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'} text-xs group-hover:scale-110 transition-transform`}></i>
                 </button>
 
-                {/* Modern Navigation - Con scroll optimizado */}
+                {/* Modern Navigation - Con secciones colapsables */}
                 <nav className="flex-1 px-3 py-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         {filteredSections.map((section, sectionIndex) => (
                             <div key={sectionIndex} className="space-y-1">
-                                {/* Section Title */}
+                                {/* Section Title - Clickeable para colapsar */}
                                 {!isCollapsed && (
-                                    <div className="px-3 mb-2">
-                                        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                    <button
+                                        onClick={() => toggleSection(section.title)}
+                                        className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-gray-50 rounded-lg transition-all duration-200 group"
+                                    >
+                                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider group-hover:text-gray-700">
                                             {section.title}
                                         </h3>
-                                    </div>
+                                        <i className={`fas fa-chevron-${collapsedSections[section.title] ? 'right' : 'down'} text-xs text-gray-400 group-hover:text-gray-600 transition-transform duration-200`}></i>
+                                    </button>
                                 )}
 
-                                {/* Section Items */}
-                                <div className="space-y-1">
+                                {/* Section Items - Colapsables */}
+                                <div className={`space-y-1 transition-all duration-300 ${!isCollapsed && collapsedSections[section.title] ? 'max-h-0 overflow-hidden opacity-0' : 'max-h-96 opacity-100'}`}>
                                     {section.items.map((item) => {
                                         const isActive = isActivePath(item.path);
                                         return (
@@ -219,7 +263,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                                         </div>
                                     </div>
 
-                                    {/* Action Buttons - Compactos */}
+                                    {/* Action Buttons - Solo Usuarios */}
                                     <div className="space-y-1">
                                         <button
                                             onClick={() => setShowUserManagement(true)}
@@ -227,14 +271,6 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                                         >
                                             <i className="fas fa-users text-xs group-hover:scale-110 transition-transform"></i>
                                             <span className="font-medium text-xs">Usuarios</span>
-                                        </button>
-
-                                        <button
-                                            onClick={handleLogout}
-                                            className="w-full flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-all duration-200 group"
-                                        >
-                                            <i className="fas fa-sign-out-alt text-xs group-hover:scale-110 transition-transform"></i>
-                                            <span className="font-medium text-xs">Salir</span>
                                         </button>
                                     </div>
                                 </>
@@ -261,17 +297,6 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                                             <i className="fas fa-users text-sm"></i>
                                             <div className="absolute left-full ml-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-xl">
                                                 Gestión Usuarios
-                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-900 rotate-45"></div>
-                                            </div>
-                                        </button>
-
-                                        <button
-                                            onClick={handleLogout}
-                                            className="relative group w-full p-2.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 flex justify-center"
-                                        >
-                                            <i className="fas fa-sign-out-alt text-sm"></i>
-                                            <div className="absolute left-full ml-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-xl">
-                                                Cerrar Sesión
                                                 <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-900 rotate-45"></div>
                                             </div>
                                         </button>
