@@ -101,9 +101,9 @@ const Settings = () => {
                 </div>
 
                 {/* Settings Content */}
-                <div className="px-6 py-8">
-                    <div className="max-w-4xl mx-auto">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="px-4 sm:px-6 py-8">
+                    <div className="max-w-6xl mx-auto">
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
                             {/* General Settings */}
                             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
@@ -264,7 +264,7 @@ const Settings = () => {
                             <button
                                 onClick={handleSave}
                                 disabled={loading}
-                                className={`px-8 py-4 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center space-x-3 ${saved
+                                className={`px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center space-x-3 text-sm sm:text-base ${saved
                                     ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'
                                     : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
                                     }`}

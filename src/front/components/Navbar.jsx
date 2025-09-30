@@ -1,19 +1,35 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.jsx";
 import AdminLogin from "./AdminLogin.jsx";
 import UserManagement from "./UserManagement.jsx";
 
 export const Navbar = () => {
-	const { isAuthenticated, logout } = useAuth();
+	const { isAuthenticated, logout, user } = useAuth();
 	const [showLogin, setShowLogin] = useState(false);
 	const [showUserManagement, setShowUserManagement] = useState(false);
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+	const [showDropdown, setShowDropdown] = useState(false);
 	const location = useLocation();
+	const dropdownRef = useRef(null);
 
 	const handleLogout = async () => {
 		await logout();
 	};
+
+	// Close dropdown when clicking outside
+	useEffect(() => {
+		const handleClickOutside = (event) => {
+			if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+				setShowDropdown(false);
+			}
+		};
+
+		document.addEventListener('mousedown', handleClickOutside);
+		return () => {
+			document.removeEventListener('mousedown', handleClickOutside);
+		};
+	}, []);
 
 	const navItems = [
 		{ path: "/", icon: "fas fa-home", label: "Dashboard" },
@@ -33,8 +49,8 @@ export const Navbar = () => {
 		<>
 			{/* Modern Professional Navbar */}
 			<nav className="bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 shadow-2xl border-b border-blue-800/30 sticky top-0 z-50 backdrop-blur-sm">
-				<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-					<div className="flex items-center justify-between h-16">
+				<div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+					<div className="flex items-center justify-between h-14 sm:h-16">
 						{/* Logo */}
 						<div className="flex items-center">
 							<Link to="/" className="flex items-center space-x-3 group">
@@ -53,98 +69,107 @@ export const Navbar = () => {
 						</div>
 
 						{/* Desktop Navigation */}
-						<div className="hidden md:block">
-							<div className="ml-10 flex items-baseline space-x-1">
+						<div className="hidden lg:block">
+							<div className="ml-4 xl:ml-10 flex items-baseline space-x-1">
 								{navItems.map((item) => (
 									<Link
 										key={item.path}
 										to={item.path}
-										className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 group ${isActivePath(item.path)
+										className={`px-2 xl:px-4 py-2 rounded-lg text-xs xl:text-sm font-medium transition-all duration-200 flex items-center space-x-1 xl:space-x-2 group ${isActivePath(item.path)
 											? 'bg-blue-600/90 text-white shadow-lg shadow-blue-600/30'
 											: 'text-blue-100 hover:bg-white/10 hover:text-white'
 											}`}
 									>
-										<i className={`${item.icon} text-sm`}></i>
-										<span>{item.label}</span>
+										<i className={`${item.icon} text-xs xl:text-sm`}></i>
+										<span className="hidden xl:inline">{item.label}</span>
 									</Link>
 								))}
 							</div>
 						</div>
 
 						{/* Right side - Auth Section */}
-						<div className="hidden md:block">
-							<div className="ml-4 flex items-center md:ml-6 space-x-3">
+						<div className="hidden sm:block">
+							<div className="ml-2 sm:ml-4 flex items-center space-x-2 sm:space-x-3">
 								{isAuthenticated ? (
-									<div className="relative group">
+									<div className="relative" ref={dropdownRef}>
 										<button
 											className="flex items-center space-x-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 px-4 py-2 rounded-xl text-white font-medium shadow-lg hover:shadow-green-500/25 transition-all duration-200 transform hover:scale-105"
-											onClick={() => document.getElementById('adminDropdown').classList.toggle('hidden')}
+											onClick={() => setShowDropdown(!showDropdown)}
 										>
 											<div className="flex items-center space-x-2">
 												<div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
 													<i className="fas fa-user-shield text-sm"></i>
 												</div>
-												<div className="text-left">
-													<div className="text-sm font-semibold">Administrador</div>
-													<div className="text-xs opacity-90">Acceso Total</div>
+												<div className="text-left hidden sm:block">
+													<div className="text-sm font-semibold">{user?.name || 'Administrador'}</div>
+													<div className="text-xs opacity-90">{user?.role === 'admin' ? 'Acceso Total' : 'Usuario'}</div>
 												</div>
 											</div>
-											<i className="fas fa-chevron-down text-xs transition-transform group-hover:rotate-180"></i>
+											<i className={`fas fa-chevron-down text-xs transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`}></i>
 										</button>
 
-										<div id="adminDropdown" className="hidden absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50">
-											<div className="px-4 py-3 bg-gradient-to-r from-green-50 to-emerald-50 border-b border-gray-100">
-												<p className="text-sm font-semibold text-gray-900">Panel Administrativo</p>
-												<p className="text-xs text-gray-600">Sesión activa</p>
+										{showDropdown && (
+											<div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50">
+												<div className="px-4 py-3 bg-gradient-to-r from-green-50 to-emerald-50 border-b border-gray-100">
+													<p className="text-sm font-semibold text-gray-900">Panel {user?.role === 'admin' ? 'Administrativo' : 'de Usuario'}</p>
+													<p className="text-xs text-gray-600">Sesión activa • {user?.email}</p>
+												</div>
+												<div className="py-2">
+													{user?.role === 'admin' && (
+														<button
+															onClick={() => {
+																setShowUserManagement(true);
+																setShowDropdown(false);
+															}}
+															className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150 flex items-center space-x-2"
+														>
+															<i className="fas fa-users"></i>
+															<span>Gestión de Usuarios</span>
+														</button>
+													)}
+													{user?.role === 'admin' && (
+														<Link
+															to="/settings"
+															onClick={() => setShowDropdown(false)}
+															className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-600 transition-colors duration-150"
+														>
+															<i className="fas fa-cogs mr-2"></i>
+															<span>Configuración</span>
+														</Link>
+													)}
+													<Link
+														to="/profile"
+														className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-600 transition-colors duration-150"
+														onClick={() => setShowDropdown(false)}
+													>
+														<i className="fas fa-user mr-2"></i>
+														<span>Mi Perfil</span>
+													</Link>
+													{user?.role === 'admin' && (
+														<Link
+															to="/users"
+															className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-600 transition-colors duration-150"
+															onClick={() => setShowDropdown(false)}
+														>
+															<i className="fas fa-users-cog mr-2"></i>
+															<span>Administrar Usuarios</span>
+														</Link>
+													)}
+												</div>
+												<div className="border-t border-gray-100">
+													<button
+														onClick={() => {
+															handleLogout();
+															setShowDropdown(false);
+														}}
+														className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-150 flex items-center space-x-2"
+													>
+														<i className="fas fa-sign-out-alt"></i>
+														<span>Cerrar Sesión</span>
+													</button>
+												</div>
 											</div>
-											<div className="py-2">
-												<button
-													onClick={() => {
-														setShowUserManagement(true);
-														document.getElementById('adminDropdown').classList.add('hidden');
-													}}
-													className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-150 flex items-center space-x-2"
-												>
-													<i className="fas fa-users"></i>
-													<span>Gestión de Usuarios</span>
-												</button>
-												<Link
-													to="/settings"
-													onClick={() => {
-														document.getElementById('adminDropdown').classList.add('hidden');
-													}}
-													className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-600 transition-colors duration-150 flex items-center space-x-2"
-												>
-													<i className="fas fa-cogs"></i>
-													<span>Configuración</span>
-												</Link>
-												<Link
-													to="/profile"
-													className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-600 transition-colors duration-150 flex items-center space-x-2"
-													onClick={() => document.getElementById('adminDropdown').classList.add('hidden')}
-												>
-													<i className="fas fa-user"></i>
-													<span>Mi Perfil</span>
-												</Link>
-												<Link
-													to="/users"
-													className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-600 transition-colors duration-150 flex items-center space-x-2"
-													onClick={() => document.getElementById('adminDropdown').classList.add('hidden')}
-												>
-													<i className="fas fa-users-cog"></i>
-													<span>Gestión de Usuarios</span>
-												</Link>
-											</div>
-											<div className="border-t border-gray-100">
-												<button
-													onClick={handleLogout}
-													className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-150 flex items-center space-x-2"
-												>
-													<i className="fas fa-sign-out-alt"></i>
-													<span>Cerrar Sesión</span>
-												</button>
-											</div>
-										</div>
+										)}
 									</div>
 								) : (
 									<button
@@ -160,7 +185,7 @@ export const Navbar = () => {
 						</div>
 
 						{/* Mobile menu button */}
-						<div className="md:hidden">
+						<div className="sm:hidden lg:hidden">
 							<button
 								onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
 								className="bg-white/10 inline-flex items-center justify-center p-2 rounded-md text-blue-200 hover:text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white transition-all duration-200"
@@ -173,7 +198,7 @@ export const Navbar = () => {
 
 				{/* Mobile Navigation Menu */}
 				{mobileMenuOpen && (
-					<div className="md:hidden bg-slate-800/95 backdrop-blur-sm border-t border-blue-800/30">
+					<div className="sm:hidden lg:hidden bg-slate-800/95 backdrop-blur-sm border-t border-blue-800/30">
 						<div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
 							{navItems.map((item) => (
 								<Link
