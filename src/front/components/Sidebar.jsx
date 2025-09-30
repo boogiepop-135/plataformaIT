@@ -132,7 +132,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                                 </div>
                             )}
                         </div>
-                        
+
                         {/* Logout Button - Top Right */}
                         {isAuthenticated && !isCollapsed && (
                             <button
@@ -143,7 +143,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                                 <i className="fas fa-sign-out-alt text-sm group-hover:scale-110 transition-transform"></i>
                             </button>
                         )}
-                        
+
                         {/* Logout for collapsed state */}
                         {isAuthenticated && isCollapsed && (
                             <div className="absolute top-4 right-4">
