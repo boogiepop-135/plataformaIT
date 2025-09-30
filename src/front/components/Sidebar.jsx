@@ -126,7 +126,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                                     </div>
                                 )}
 
-                            {/* Section Items */}
+                                {/* Section Items */}
                                 <div className="space-y-1">
                                     {section.items.map((item) => {
                                         const isActive = isActivePath(item.path);
@@ -134,52 +134,52 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                                             <Link
                                                 key={item.path}
                                                 to={item.path}
-                                                className={`relative flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 group ${
-                                                    isActive
+                                                className={`relative flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 group ${isActive
                                                         ? 'bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 shadow-md shadow-indigo-500/10 border border-indigo-100'
                                                         : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600'
-                                                }`}
+                                                    }`}
                                             >
-                                            {/* Active indicator */}
-                                            {isActive && (
-                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-r-full"></div>
-                                            )}
+                                                {/* Active indicator */}
+                                                {isActive && (
+                                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-r-full"></div>
+                                                )}
 
-                                            {/* Icon */}
-                                            <div className={`flex-shrink-0 w-5 h-5 flex items-center justify-center ${isActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500'
-                                                }`}>
-                                                <i className={`${item.icon} text-sm`}></i>
-                                            </div>
-
-                                            {/* Label */}
-                                            {!isCollapsed && (
-                                                <div className="flex items-center justify-between flex-1">
-                                                    <span className="font-medium text-sm">{item.label}</span>
-                                                    {item.requireAuth && (
-                                                        <div className="w-2 h-2 bg-amber-400 rounded-full opacity-60"></div>
-                                                    )}
+                                                {/* Icon */}
+                                                <div className={`flex-shrink-0 w-5 h-5 flex items-center justify-center ${isActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500'
+                                                    }`}>
+                                                    <i className={`${item.icon} text-sm`}></i>
                                                 </div>
-                                            )}
 
-                                            {/* Tooltip for collapsed state */}
-                                            {isCollapsed && (
-                                                <div className="absolute left-full ml-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-xl">
-                                                    <div className="flex items-center space-x-2">
+                                                {/* Label */}
+                                                {!isCollapsed && (
+                                                    <div className="flex items-center justify-between flex-1">
+                                                        <span className="font-medium text-sm">{item.label}</span>
                                                         {item.requireAuth && (
-                                                            <div className="w-2 h-2 bg-amber-400 rounded-full"></div>
+                                                            <div className="w-2 h-2 bg-amber-400 rounded-full opacity-60"></div>
                                                         )}
-                                                        <span>{item.label}</span>
                                                     </div>
-                                                    {/* Arrow */}
-                                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-900 rotate-45"></div>
-                                                </div>
-                                            )}
-                                        </Link>
-                                    );
-                                })}
+                                                )}
+
+                                                {/* Tooltip for collapsed state */}
+                                                {isCollapsed && (
+                                                    <div className="absolute left-full ml-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-xl">
+                                                        <div className="flex items-center space-x-2">
+                                                            {item.requireAuth && (
+                                                                <div className="w-2 h-2 bg-amber-400 rounded-full"></div>
+                                                            )}
+                                                            <span>{item.label}</span>
+                                                        </div>
+                                                        {/* Arrow */}
+                                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-900 rotate-45"></div>
+                                                    </div>
+                                                )}
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </nav>
 
                 {/* Modern Admin Section - Compacto */}
