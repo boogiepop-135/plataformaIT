@@ -44,15 +44,15 @@ export const Layout = () => {
                 {/* Top Navigation */}
                 <TopNavbar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
 
-                {/* Main Content Area */}
+                {/* Main Content Area - Ajustado para navbar más pequeño */}
                 <main className={`transition-all duration-300 ease-in-out ${isCollapsed ? 'ml-16' : 'ml-64'
-                    } ${isMobile ? 'ml-0' : ''} pt-16 relative z-10`}>
+                    } ${isMobile ? 'ml-0' : ''} pt-12 relative z-10`}>
 
                     {/* Content Container */}
-                    <div className="min-h-[calc(100vh-4rem)] p-6 lg:p-8">
+                    <div className="min-h-[calc(100vh-3rem)] p-4 lg:p-6">
                         <div className="max-w-7xl mx-auto">
                             {/* Glass morphism container */}
-                            <div className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/20 shadow-xl shadow-blue-500/5 min-h-[calc(100vh-8rem)] overflow-hidden">
+                            <div className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/20 shadow-xl shadow-blue-500/5 min-h-[calc(100vh-6rem)] overflow-hidden">
                                 <Outlet />
                             </div>
                         </div>

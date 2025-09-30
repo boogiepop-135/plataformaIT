@@ -18,10 +18,10 @@ export const TopNavbar = ({ isCollapsed, setIsCollapsed }) => {
 
     return (
         <>
-            {/* Ultra-Modern Top Navigation */}
-            <nav className={`fixed top-0 right-0 h-16 bg-white/70 backdrop-blur-2xl shadow-sm border-b border-gray-200/30 z-30 transition-all duration-300 ${isCollapsed ? 'left-16' : 'left-64'
+            {/* Ultra-Modern Top Navigation - Compacto */}
+            <nav className={`fixed top-0 right-0 h-12 bg-white/70 backdrop-blur-2xl shadow-sm border-b border-gray-200/30 z-30 transition-all duration-300 ${isCollapsed ? 'left-16' : 'left-64'
                 }`}>
-                <div className="h-full px-6 flex items-center justify-between">
+                <div className="h-full px-4 flex items-center justify-between">
 
                     {/* Left side - Mobile menu button */}
                     <div className="md:hidden">
@@ -33,41 +33,40 @@ export const TopNavbar = ({ isCollapsed, setIsCollapsed }) => {
                         </button>
                     </div>
 
-                    {/* Center - Dynamic page info with modern design */}
+                    {/* Center - Dynamic page info compacto */}
                     <div className="flex-1 flex items-center justify-center md:justify-start">
-                        <div className="hidden md:flex items-center space-x-4">
-                            <div className="flex items-center space-x-3">
-                                <div className="w-8 h-8 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center">
-                                    <i className={`${pageInfo.icon} text-indigo-600 text-sm`}></i>
+                        <div className="hidden md:flex items-center space-x-3">
+                            <div className="flex items-center space-x-2">
+                                <div className="w-6 h-6 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-md flex items-center justify-center">
+                                    <i className={`${pageInfo.icon} text-indigo-600 text-xs`}></i>
                                 </div>
                                 <div>
-                                    <h1 className="text-lg font-bold text-gray-900">{pageInfo.title}</h1>
-                                    <p className="text-xs text-gray-500 -mt-1">{pageInfo.description}</p>
+                                    <h1 className="text-sm font-bold text-gray-900">{pageInfo.title}</h1>
                                 </div>
                             </div>
                         </div>
 
                         {/* Mobile title - simplified */}
                         <div className="md:hidden flex items-center space-x-2">
-                            <div className="w-6 h-6 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-md flex items-center justify-center">
+                            <div className="w-5 h-5 bg-gradient-to-br from-indigo-100 to-purple-100 rounded flex items-center justify-center">
                                 <i className={`${pageInfo.icon} text-indigo-600 text-xs`}></i>
                             </div>
-                            <h1 className="text-base font-bold text-gray-900">{pageInfo.title}</h1>
+                            <h1 className="text-sm font-bold text-gray-900">{pageInfo.title}</h1>
                         </div>
                     </div>
 
-                    {/* Right side - Modern toolbar */}
-                    <div className="flex items-center space-x-2">
+                    {/* Right side - Toolbar compacto */}
+                    <div className="flex items-center space-x-1">
 
                         {/* Search button */}
-                        <button className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all duration-200 hidden sm:flex items-center justify-center">
-                            <i className="fas fa-search text-sm"></i>
+                        <button className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200 hidden sm:flex items-center justify-center">
+                            <i className="fas fa-search text-xs"></i>
                         </button>
 
                         {/* Notifications */}
-                        <button className="relative p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all duration-200">
-                            <i className="fas fa-bell text-sm"></i>
-                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                        <button className="relative p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200">
+                            <i className="fas fa-bell text-xs"></i>
+                            <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
                                 2
                             </span>
                         </button>

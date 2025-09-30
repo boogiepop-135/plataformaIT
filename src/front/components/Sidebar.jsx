@@ -82,22 +82,22 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
             <div className={`fixed left-0 top-0 h-full bg-white/80 backdrop-blur-2xl shadow-2xl border-r border-gray-200/50 transition-all duration-300 ease-in-out z-40 ${isCollapsed ? 'w-16' : 'w-64'
                 }`}>
 
-                {/* Modern Logo Section */}
-                <div className="p-6 border-b border-gray-200/50">
+                {/* Modern Logo Section - Compacto */}
+                <div className="p-4 border-b border-gray-200/50">
                     <div className="flex items-center space-x-3">
                         <div className="relative">
-                            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 via-purple-500 to-blue-500 rounded-xl shadow-lg flex items-center justify-center">
-                                <i className="fas fa-laptop-code text-white text-lg"></i>
+                            <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 via-purple-500 to-blue-500 rounded-lg shadow-lg flex items-center justify-center">
+                                <i className="fas fa-laptop-code text-white text-sm"></i>
                             </div>
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white animate-pulse"></div>
+                            <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full border border-white animate-pulse"></div>
                         </div>
                         {!isCollapsed && (
                             <div className="overflow-hidden">
-                                <h1 className="text-xl font-black bg-gradient-to-r from-gray-900 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                                <h1 className="text-lg font-black bg-gradient-to-r from-gray-900 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
                                     Plataforma IT
                                 </h1>
                                 <p className="text-xs text-gray-500 font-medium tracking-wide">
-                                    Management Suite Pro
+                                    Management Suite
                                 </p>
                             </div>
                         )}
@@ -107,37 +107,39 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                 {/* Modern Toggle Button */}
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="absolute -right-4 top-20 w-8 h-8 bg-white border border-gray-200 hover:border-indigo-300 rounded-full flex items-center justify-center text-gray-600 hover:text-indigo-600 shadow-lg hover:shadow-xl transition-all duration-200 z-50 group"
+                    className="absolute -right-4 top-16 w-7 h-7 bg-white border border-gray-200 hover:border-indigo-300 rounded-full flex items-center justify-center text-gray-600 hover:text-indigo-600 shadow-lg hover:shadow-xl transition-all duration-200 z-50 group"
                 >
-                    <i className={`fas ${isCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'} text-sm group-hover:scale-110 transition-transform`}></i>
+                    <i className={`fas ${isCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'} text-xs group-hover:scale-110 transition-transform`}></i>
                 </button>
 
-                {/* Modern Navigation */}
-                <nav className="flex-1 px-4 py-6 space-y-6 overflow-y-auto">
-                    {filteredSections.map((section, sectionIndex) => (
-                        <div key={sectionIndex} className="space-y-2">
-                            {/* Section Title */}
-                            {!isCollapsed && (
-                                <div className="px-3 mb-4">
-                                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                        {section.title}
-                                    </h3>
-                                </div>
-                            )}
+                {/* Modern Navigation - Con scroll optimizado */}
+                <nav className="flex-1 px-3 py-4 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
+                    <div className="space-y-4">
+                        {filteredSections.map((section, sectionIndex) => (
+                            <div key={sectionIndex} className="space-y-1">
+                                {/* Section Title */}
+                                {!isCollapsed && (
+                                    <div className="px-3 mb-2">
+                                        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                            {section.title}
+                                        </h3>
+                                    </div>
+                                )}
 
                             {/* Section Items */}
-                            <div className="space-y-1">
-                                {section.items.map((item) => {
-                                    const isActive = isActivePath(item.path);
-                                    return (
-                                        <Link
-                                            key={item.path}
-                                            to={item.path}
-                                            className={`relative flex items-center space-x-3 px-3 py-3 rounded-xl transition-all duration-200 group ${isActive
-                                                    ? 'bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 shadow-lg shadow-indigo-500/10 border border-indigo-100'
-                                                    : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600'
+                                <div className="space-y-1">
+                                    {section.items.map((item) => {
+                                        const isActive = isActivePath(item.path);
+                                        return (
+                                            <Link
+                                                key={item.path}
+                                                to={item.path}
+                                                className={`relative flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200 group ${
+                                                    isActive
+                                                        ? 'bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 shadow-md shadow-indigo-500/10 border border-indigo-100'
+                                                        : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600'
                                                 }`}
-                                        >
+                                            >
                                             {/* Active indicator */}
                                             {isActive && (
                                                 <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-r-full"></div>
@@ -180,44 +182,44 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                     ))}
                 </nav>
 
-                {/* Modern Admin Section */}
+                {/* Modern Admin Section - Compacto */}
                 {isAuthenticated && (
-                    <div className="p-4 border-t border-gray-200/50 mt-auto">
-                        <div className="space-y-3">
+                    <div className="p-3 border-t border-gray-200/50 mt-auto">
+                        <div className="space-y-2">
                             {!isCollapsed ? (
                                 <>
                                     {/* Modern Admin Panel */}
-                                    <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4">
-                                        <div className="flex items-center space-x-3">
+                                    <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-lg p-3">
+                                        <div className="flex items-center space-x-2">
                                             <div className="relative">
-                                                <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-green-500 rounded-full flex items-center justify-center">
-                                                    <i className="fas fa-user-shield text-white text-sm"></i>
+                                                <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-green-500 rounded-full flex items-center justify-center">
+                                                    <i className="fas fa-user-shield text-white text-xs"></i>
                                                 </div>
-                                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border border-white"></div>
+                                                <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border border-white"></div>
                                             </div>
                                             <div className="flex-1">
-                                                <div className="font-semibold text-sm text-gray-900">{user?.name || 'Administrador'}</div>
-                                                <div className="text-emerald-600 text-xs font-medium">Acceso Total</div>
+                                                <div className="font-semibold text-xs text-gray-900">{user?.name || 'Admin'}</div>
+                                                <div className="text-emerald-600 text-xs font-medium">Online</div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Action Buttons */}
-                                    <div className="space-y-2">
+                                    {/* Action Buttons - Compactos */}
+                                    <div className="space-y-1">
                                         <button
                                             onClick={() => setShowUserManagement(true)}
-                                            className="w-full flex items-center space-x-3 px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200 group"
+                                            className="w-full flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-all duration-200 group"
                                         >
-                                            <i className="fas fa-users text-sm group-hover:scale-110 transition-transform"></i>
-                                            <span className="font-medium text-sm">Gestión Usuarios</span>
+                                            <i className="fas fa-users text-xs group-hover:scale-110 transition-transform"></i>
+                                            <span className="font-medium text-xs">Usuarios</span>
                                         </button>
 
                                         <button
                                             onClick={handleLogout}
-                                            className="w-full flex items-center space-x-3 px-3 py-2.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 group"
+                                            className="w-full flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-all duration-200 group"
                                         >
-                                            <i className="fas fa-sign-out-alt text-sm group-hover:scale-110 transition-transform"></i>
-                                            <span className="font-medium text-sm">Cerrar Sesión</span>
+                                            <i className="fas fa-sign-out-alt text-xs group-hover:scale-110 transition-transform"></i>
+                                            <span className="font-medium text-xs">Salir</span>
                                         </button>
                                     </div>
                                 </>
