@@ -28,16 +28,7 @@ export const AuthRequired = () => {
                     Por favor, inicia sesión para acceder a esta funcionalidad.
                 </p>
 
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-                    <div className="flex items-center space-x-3">
-                        <i className="fas fa-info-circle text-amber-600"></i>
-                        <div className="text-left">
-                            <p className="text-sm font-semibold text-amber-800">Credenciales de prueba:</p>
-                            <p className="text-xs text-amber-700">Email: admin@plataformait.com</p>
-                            <p className="text-xs text-amber-700">Password: admin123</p>
-                        </div>
-                    </div>
-                </div>
+
 
                 <button
                     onClick={() => document.dispatchEvent(new CustomEvent('showLogin'))}
@@ -75,16 +66,7 @@ export const PublicOnlyRoute = ({ children }) => {
                         inicia sesión con credenciales administrativas.
                     </p>
 
-                    <div className="bg-blue-800/30 border border-blue-600/50 rounded-xl max-w-md mx-auto p-6 mb-8">
-                        <div className="flex items-center space-x-3 mb-4">
-                            <i className="fas fa-key text-blue-300 text-lg"></i>
-                            <p className="text-blue-200 font-semibold">Credenciales de Acceso</p>
-                        </div>
-                        <div className="text-left space-y-2 text-sm">
-                            <p className="text-blue-200">Email: <span className="text-white font-mono">admin@plataformait.com</span></p>
-                            <p className="text-blue-200">Password: <span className="text-white font-mono">admin123</span></p>
-                        </div>
-                    </div>
+
 
                     <button
                         onClick={() => document.dispatchEvent(new CustomEvent('showLogin'))}

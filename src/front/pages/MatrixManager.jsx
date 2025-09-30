@@ -24,6 +24,23 @@ const MatrixManager = () => {
         fetchTemplates();
     }, []);
 
+    const fetchMatrices = async () => {
+        try {
+            setLoading(true);
+            const response = await fetch(`${BACKEND_URL}/api/matrices`, {
+                headers: getAuthHeaders()
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setMatrices(data);
+            }
+        } catch (error) {
+            console.error('Error loading matrices:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const loadMatrices = async () => {
         try {
             const response = await fetch(`${BACKEND_URL}/api/matrices`);
@@ -92,7 +109,9 @@ const MatrixManager = () => {
         } catch (error) {
             alert('Error de conexión al exportar Excel');
         }
-    }; const fetchTemplates = async () => {
+    };
+
+    const fetchTemplates = async () => {
         try {
             const response = await fetch(`${BACKEND_URL}/api/matrix-templates`);
             if (response.ok) {

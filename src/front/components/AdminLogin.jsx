@@ -108,7 +108,7 @@ const AdminLogin = ({ onClose, onLoginSuccess }) => {
                                     name="username"
                                     value={credentials.username}
                                     onChange={handleChange}
-                                    className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white"
+                                    className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 placeholder-gray-500"
                                     placeholder="Ingresa tu usuario"
                                     required
                                     autoFocus
@@ -130,32 +130,10 @@ const AdminLogin = ({ onClose, onLoginSuccess }) => {
                                     name="password"
                                     value={credentials.password}
                                     onChange={handleChange}
-                                    className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white"
+                                    className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-gray-900 placeholder-gray-500"
                                     placeholder="Ingresa tu contraseña"
                                     required
                                 />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Credentials Info */}
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 mt-6">
-                        <div className="flex items-start space-x-3">
-                            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                <i className="fas fa-info text-white text-sm"></i>
-                            </div>
-                            <div>
-                                <h4 className="text-blue-800 font-semibold text-sm mb-1">Credenciales por Defecto</h4>
-                                <div className="text-blue-700 text-sm space-y-1">
-                                    <div className="flex items-center space-x-2">
-                                        <span className="font-medium">Usuario:</span>
-                                        <code className="bg-blue-100 px-2 py-1 rounded text-xs font-mono">admin</code>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <span className="font-medium">Contraseña:</span>
-                                        <code className="bg-blue-100 px-2 py-1 rounded text-xs font-mono">admin123</code>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
