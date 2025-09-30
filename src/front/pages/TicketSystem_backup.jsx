@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { BACKEND_URL } from "../config/backend.js";
-import { useAuth } from "../hooks/useAuth.jsx";
+import { useAuth } from "../hooks/useGlobalReducer.jsx";
 import { ProtectedRoute } from "../components/ProtectedRoute.jsx";
 
 export const TicketSystem = () => {
-    const { isAuthenticated, token, user, getAuthHeaders } = useAuth();
+    const { auth, user } = useAuth();
     const [tickets, setTickets] = useState([]);
     const [newTicket, setNewTicket] = useState({
         title: "",
@@ -64,8 +64,8 @@ export const TicketSystem = () => {
                 'Content-Type': 'application/json'
             };
 
-            if (token && editingTicket) {
-                headers['Authorization'] = `Bearer ${token}`;
+            if (auth.token && editingTicket) {
+                headers['Authorization'] = `Bearer ${auth.token}`;
             }
 
             const response = await fetch(url, {
@@ -99,7 +99,7 @@ export const TicketSystem = () => {
     };
 
     const handleEditTicket = (ticket) => {
-        if (!token) {
+        if (!auth.token) {
             alert("Se requiere autenticación administrativa para editar tickets.");
             return;
         }
@@ -116,7 +116,7 @@ export const TicketSystem = () => {
     };
 
     const handleDeleteTicket = async (ticketId) => {
-        if (!token) {
+        if (!auth.token) {
             alert("Se requiere autenticación administrativa para eliminar tickets.");
             return;
         }
@@ -126,7 +126,7 @@ export const TicketSystem = () => {
                 const response = await fetch(`${BACKEND_URL}/api/tickets/${ticketId}`, {
                     method: "DELETE",
                     headers: {
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${auth.token}`
                     }
                 });
                 if (response.ok) {
@@ -147,7 +147,7 @@ export const TicketSystem = () => {
     };
 
     const exportToExcel = async () => {
-        if (!token) {
+        if (!auth.token) {
             alert("Se requiere autenticación administrativa para exportar datos.");
             return;
         }
@@ -156,7 +156,7 @@ export const TicketSystem = () => {
         try {
             const response = await fetch(`${BACKEND_URL}/api/tickets/export`, {
                 headers: {
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${auth.token}`
                 }
             });
 
@@ -377,16 +377,16 @@ export const TicketSystem = () => {
                                     <button
                                         key={item.key}
                                         className={`relative overflow-hidden px-6 py-3 rounded-2xl font-bold text-white transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center space-x-3 ${filter === item.key
-                                            ? `bg-gradient-to-r ${item.color} shadow-xl scale-105`
-                                            : 'bg-white/80 text-gray-700 hover:bg-gray-100 border-2 border-gray-200'
+                                                ? `bg-gradient-to-r ${item.color} shadow-xl scale-105`
+                                                : 'bg-white/80 text-gray-700 hover:bg-gray-100 border-2 border-gray-200'
                                             }`}
                                         onClick={() => setFilter(item.key)}
                                     >
                                         <i className={`fas ${item.icon} ${filter === item.key ? 'text-white' : 'text-gray-600'}`}></i>
                                         <span>{item.label}</span>
                                         <span className={`px-2 py-1 rounded-full text-xs font-bold ${filter === item.key
-                                            ? 'bg-white/20 text-white'
-                                            : 'bg-gray-200 text-gray-700'
+                                                ? 'bg-white/20 text-white'
+                                                : 'bg-gray-200 text-gray-700'
                                             }`}>
                                             {item.count}
                                         </span>
@@ -474,7 +474,7 @@ export const TicketSystem = () => {
                                                     )}
 
                                                     {/* Action Buttons */}
-                                                    {token && (
+                                                    {auth.token && (
                                                         <div className="flex gap-3">
                                                             <button
                                                                 className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white py-3 px-4 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-blue-500/25 flex items-center justify-center space-x-2"
@@ -707,8 +707,8 @@ export const TicketSystem = () => {
                                     <button
                                         type="button"
                                         className={`px-8 py-3 rounded-2xl font-bold text-white transition-all duration-300 transform hover:scale-105 shadow-xl flex items-center justify-center space-x-2 ${!newTicket.title
-                                            ? 'bg-gray-400 cursor-not-allowed'
-                                            : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 hover:shadow-blue-500/25'
+                                                ? 'bg-gray-400 cursor-not-allowed'
+                                                : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 hover:shadow-blue-500/25'
                                             }`}
                                         onClick={handleSaveTicket}
                                         disabled={!newTicket.title}

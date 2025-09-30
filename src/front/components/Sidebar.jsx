@@ -11,30 +11,53 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
         await logout();
     };
 
-    // Define navigation items with authentication requirements
-    const allNavItems = [
-        { path: "/", icon: "fas fa-home", label: "Dashboard", requireAuth: false },
-        { path: "/kanban", icon: "fas fa-columns", label: "Kanban Board", requireAuth: true },
-        { path: "/tickets", icon: "fas fa-ticket-alt", label: "Tickets", requireAuth: true },
-        { path: "/calendar", icon: "fas fa-calendar-alt", label: "Calendario", requireAuth: true },
-        { path: "/matrices", icon: "fas fa-th", label: "Matrices", requireAuth: true },
-        { path: "/journal", icon: "fas fa-book", label: "Bitácora", requireAuth: true },
-        { path: "/profile", icon: "fas fa-user", label: "Mi Perfil", requireAuth: true },
-        { path: "/users", icon: "fas fa-users-cog", label: "Gestión de Usuarios", requireAuth: true, adminOnly: true },
-        { path: "/settings", icon: "fas fa-cogs", label: "Configuración", requireAuth: true, adminOnly: true },
-        { path: "/demo", icon: "fas fa-flask", label: "Demo", requireAuth: false }
+    // Define navigation items with authentication requirements and categories
+    const navigationSections = [
+        {
+            title: "Principal",
+            items: [
+                { path: "/", icon: "fas fa-home", label: "Dashboard", requireAuth: false },
+                { path: "/calendar", icon: "fas fa-calendar-days", label: "Calendario", requireAuth: true },
+            ]
+        },
+        {
+            title: "Gestión",
+            items: [
+                { path: "/kanban", icon: "fas fa-columns", label: "Kanban", requireAuth: true },
+                { path: "/tickets", icon: "fas fa-ticket", label: "Tickets", requireAuth: true },
+                { path: "/matrices", icon: "fas fa-table-cells", label: "Matrices", requireAuth: true },
+                { path: "/journal", icon: "fas fa-book-open", label: "Bitácora", requireAuth: true },
+            ]
+        },
+        {
+            title: "Usuario",
+            items: [
+                { path: "/profile", icon: "fas fa-user-circle", label: "Mi Perfil", requireAuth: true },
+                { path: "/users", icon: "fas fa-users-gear", label: "Usuarios", requireAuth: true, adminOnly: true },
+                { path: "/settings", icon: "fas fa-gear", label: "Configuración", requireAuth: true, adminOnly: true },
+            ]
+        },
+        {
+            title: "Desarrollo",
+            items: [
+                { path: "/demo", icon: "fas fa-code", label: "Demo", requireAuth: false }
+            ]
+        }
     ];
 
-    // Filter navigation items based on authentication status and role
-    const navItems = allNavItems.filter(item => {
-        if (item.requireAuth && !isAuthenticated) {
-            return false; // Hide protected routes if not authenticated
-        }
-        if (item.adminOnly && (!user || user.role !== 'admin')) {
-            return false; // Hide admin-only routes if not admin
-        }
-        return true;
-    });
+    // Filter navigation sections based on authentication status and role
+    const filteredSections = navigationSections.map(section => ({
+        ...section,
+        items: section.items.filter(item => {
+            if (item.requireAuth && !isAuthenticated) {
+                return false;
+            }
+            if (item.adminOnly && (!user || user.role !== 'admin')) {
+                return false;
+            }
+            return true;
+        })
+    })).filter(section => section.items.length > 0);
 
     const isActivePath = (path) => {
         return location.pathname === path;
@@ -55,147 +78,184 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
 
     return (
         <>
-            {/* Sidebar */}
-            <div className={`fixed left-0 top-0 h-full bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 shadow-2xl border-r border-blue-800/30 transition-all duration-300 z-40 ${isCollapsed ? 'w-16' : 'w-64'
+            {/* Ultra-Modern Sidebar */}
+            <div className={`fixed left-0 top-0 h-full bg-white/80 backdrop-blur-2xl shadow-2xl border-r border-gray-200/50 transition-all duration-300 ease-in-out z-40 ${isCollapsed ? 'w-16' : 'w-64'
                 }`}>
 
-                {/* Logo Section */}
-                <div className="p-4 border-b border-blue-800/30">
+                {/* Modern Logo Section */}
+                <div className="p-6 border-b border-gray-200/50">
                     <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg flex-shrink-0">
-                            <i className="fas fa-laptop-code text-white text-xl"></i>
+                        <div className="relative">
+                            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 via-purple-500 to-blue-500 rounded-xl shadow-lg flex items-center justify-center">
+                                <i className="fas fa-laptop-code text-white text-lg"></i>
+                            </div>
+                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white animate-pulse"></div>
                         </div>
                         {!isCollapsed && (
                             <div className="overflow-hidden">
-                                <h1 className="text-xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent whitespace-nowrap">
+                                <h1 className="text-xl font-black bg-gradient-to-r from-gray-900 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
                                     Plataforma IT
                                 </h1>
-                                <p className="text-xs text-blue-300/80 font-medium tracking-wide whitespace-nowrap">
-                                    Management Suite
+                                <p className="text-xs text-gray-500 font-medium tracking-wide">
+                                    Management Suite Pro
                                 </p>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Toggle Button */}
+                {/* Modern Toggle Button */}
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="absolute -right-3 top-20 w-6 h-6 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-200 z-50"
+                    className="absolute -right-4 top-20 w-8 h-8 bg-white border border-gray-200 hover:border-indigo-300 rounded-full flex items-center justify-center text-gray-600 hover:text-indigo-600 shadow-lg hover:shadow-xl transition-all duration-200 z-50 group"
                 >
-                    <i className={`fas ${isCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'} text-xs`}></i>
+                    <i className={`fas ${isCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'} text-sm group-hover:scale-110 transition-transform`}></i>
                 </button>
 
-                {/* Navigation Items */}
-                <nav className="flex-1 p-4 space-y-2">
-                    {navItems.map((item) => {
-                        const isActive = isActivePath(item.path);
-                        return (
-                            <Link
-                                key={item.path}
-                                to={item.path}
-                                className={`flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 group relative ${isActive
-                                    ? 'bg-blue-600/90 text-white shadow-lg shadow-blue-600/30'
-                                    : 'text-blue-100 hover:bg-white/10 hover:text-white'
-                                    }`}
-                            >
-                                <div className="flex-shrink-0">
-                                    <i className={`${item.icon} text-lg`}></i>
+                {/* Modern Navigation */}
+                <nav className="flex-1 px-4 py-6 space-y-6 overflow-y-auto">
+                    {filteredSections.map((section, sectionIndex) => (
+                        <div key={sectionIndex} className="space-y-2">
+                            {/* Section Title */}
+                            {!isCollapsed && (
+                                <div className="px-3 mb-4">
+                                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                                        {section.title}
+                                    </h3>
                                 </div>
-                                {!isCollapsed && (
-                                    <div className="flex items-center justify-between flex-1">
-                                        <span className="font-medium">{item.label}</span>
-                                        {item.requireAuth && (
-                                            <i className="fas fa-lock text-xs opacity-70"></i>
-                                        )}
-                                    </div>
-                                )}
+                            )}
 
-                                {/* Show only label in collapsed state */}
-                                {isCollapsed && !item.requireAuth && (
-                                    <div className="absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                                        {item.label}
-                                    </div>
-                                )}
+                            {/* Section Items */}
+                            <div className="space-y-1">
+                                {section.items.map((item) => {
+                                    const isActive = isActivePath(item.path);
+                                    return (
+                                        <Link
+                                            key={item.path}
+                                            to={item.path}
+                                            className={`relative flex items-center space-x-3 px-3 py-3 rounded-xl transition-all duration-200 group ${isActive
+                                                    ? 'bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 shadow-lg shadow-indigo-500/10 border border-indigo-100'
+                                                    : 'text-gray-600 hover:bg-gray-50 hover:text-indigo-600'
+                                                }`}
+                                        >
+                                            {/* Active indicator */}
+                                            {isActive && (
+                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-r-full"></div>
+                                            )}
 
-                                {/* Show protected route tooltip in collapsed state */}
-                                {isCollapsed && item.requireAuth && (
-                                    <div className="absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 flex items-center space-x-2">
-                                        <i className="fas fa-lock text-xs"></i>
-                                        <span>{item.label}</span>
-                                    </div>
-                                )}
-                            </Link>
-                        );
-                    })}
+                                            {/* Icon */}
+                                            <div className={`flex-shrink-0 w-5 h-5 flex items-center justify-center ${isActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500'
+                                                }`}>
+                                                <i className={`${item.icon} text-sm`}></i>
+                                            </div>
+
+                                            {/* Label */}
+                                            {!isCollapsed && (
+                                                <div className="flex items-center justify-between flex-1">
+                                                    <span className="font-medium text-sm">{item.label}</span>
+                                                    {item.requireAuth && (
+                                                        <div className="w-2 h-2 bg-amber-400 rounded-full opacity-60"></div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {/* Tooltip for collapsed state */}
+                                            {isCollapsed && (
+                                                <div className="absolute left-full ml-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-xl">
+                                                    <div className="flex items-center space-x-2">
+                                                        {item.requireAuth && (
+                                                            <div className="w-2 h-2 bg-amber-400 rounded-full"></div>
+                                                        )}
+                                                        <span>{item.label}</span>
+                                                    </div>
+                                                    {/* Arrow */}
+                                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-900 rotate-45"></div>
+                                                </div>
+                                            )}
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ))}
                 </nav>
 
-                {/* Admin Section */}
+                {/* Modern Admin Section */}
                 {isAuthenticated && (
-                    <div className="p-4 border-t border-blue-800/30">
-                        <div className="space-y-2">
+                    <div className="p-4 border-t border-gray-200/50 mt-auto">
+                        <div className="space-y-3">
                             {!isCollapsed ? (
                                 <>
-                                    {/* Full Admin Panel */}
-                                    <div className="bg-gradient-to-r from-green-600/20 to-emerald-600/20 border border-green-500/30 rounded-xl p-3">
+                                    {/* Modern Admin Panel */}
+                                    <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4">
                                         <div className="flex items-center space-x-3">
-                                            <div className="w-10 h-10 bg-gradient-to-r from-green-600 to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
-                                                <i className="fas fa-user-shield text-white"></i>
+                                            <div className="relative">
+                                                <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-green-500 rounded-full flex items-center justify-center">
+                                                    <i className="fas fa-user-shield text-white text-sm"></i>
+                                                </div>
+                                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border border-white"></div>
                                             </div>
-                                            <div className="overflow-hidden">
-                                                <div className="text-white font-semibold text-sm">Administrador</div>
-                                                <div className="text-green-300 text-xs">Acceso Total</div>
+                                            <div className="flex-1">
+                                                <div className="font-semibold text-sm text-gray-900">{user?.name || 'Administrador'}</div>
+                                                <div className="text-emerald-600 text-xs font-medium">Acceso Total</div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <button
-                                        onClick={() => setShowUserManagement(true)}
-                                        className="w-full flex items-center space-x-3 p-3 text-blue-100 hover:bg-white/10 hover:text-white rounded-xl transition-all duration-200"
-                                    >
-                                        <i className="fas fa-users text-lg"></i>
-                                        <span className="font-medium">Gestión Usuarios</span>
-                                    </button>
+                                    {/* Action Buttons */}
+                                    <div className="space-y-2">
+                                        <button
+                                            onClick={() => setShowUserManagement(true)}
+                                            className="w-full flex items-center space-x-3 px-3 py-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200 group"
+                                        >
+                                            <i className="fas fa-users text-sm group-hover:scale-110 transition-transform"></i>
+                                            <span className="font-medium text-sm">Gestión Usuarios</span>
+                                        </button>
 
-                                    <button
-                                        onClick={handleLogout}
-                                        className="w-full flex items-center space-x-3 p-3 text-red-300 hover:bg-red-600/20 hover:text-red-200 rounded-xl transition-all duration-200"
-                                    >
-                                        <i className="fas fa-sign-out-alt text-lg"></i>
-                                        <span className="font-medium">Cerrar Sesión</span>
-                                    </button>
+                                        <button
+                                            onClick={handleLogout}
+                                            className="w-full flex items-center space-x-3 px-3 py-2.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 group"
+                                        >
+                                            <i className="fas fa-sign-out-alt text-sm group-hover:scale-110 transition-transform"></i>
+                                            <span className="font-medium text-sm">Cerrar Sesión</span>
+                                        </button>
+                                    </div>
                                 </>
                             ) : (
                                 <>
                                     {/* Collapsed Admin Panel */}
                                     <div className="relative group">
-                                        <div className="w-10 h-10 bg-gradient-to-r from-green-600 to-emerald-600 rounded-full flex items-center justify-center mx-auto">
-                                            <i className="fas fa-user-shield text-white"></i>
+                                        <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-green-500 rounded-full flex items-center justify-center mx-auto relative">
+                                            <i className="fas fa-user-shield text-white text-sm"></i>
+                                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border border-white"></div>
                                         </div>
                                         {/* Tooltip */}
-                                        <div className="absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 top-0">
-                                            Administrador
+                                        <div className="absolute left-full ml-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 top-0 shadow-xl">
+                                            {user?.name || 'Administrador'}
+                                            <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-900 rotate-45"></div>
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
                                         <button
                                             onClick={() => setShowUserManagement(true)}
-                                            className="relative group w-full p-3 text-blue-100 hover:bg-white/10 hover:text-white rounded-xl transition-all duration-200 flex justify-center"
+                                            className="relative group w-full p-2.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all duration-200 flex justify-center"
                                         >
-                                            <i className="fas fa-users text-lg"></i>
-                                            <div className="absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                                            <i className="fas fa-users text-sm"></i>
+                                            <div className="absolute left-full ml-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-xl">
                                                 Gestión Usuarios
+                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-900 rotate-45"></div>
                                             </div>
                                         </button>
 
                                         <button
                                             onClick={handleLogout}
-                                            className="relative group w-full p-3 text-red-300 hover:bg-red-600/20 hover:text-red-200 rounded-xl transition-all duration-200 flex justify-center"
+                                            className="relative group w-full p-2.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 flex justify-center"
                                         >
-                                            <i className="fas fa-sign-out-alt text-lg"></i>
-                                            <div className="absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                                            <i className="fas fa-sign-out-alt text-sm"></i>
+                                            <div className="absolute left-full ml-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-xl">
                                                 Cerrar Sesión
+                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-900 rotate-45"></div>
                                             </div>
                                         </button>
                                     </div>
@@ -205,49 +265,41 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
                     </div>
                 )}
 
-                {/* Protected Features Info for non-authenticated users */}
+                {/* Modern Login Section for unauthenticated users */}
                 {!isAuthenticated && (
-                    <div className="p-4 border-t border-blue-800/30">
-                        {!isCollapsed && (
-                            <div className="mb-4">
-                                <h3 className="text-xs font-semibold text-blue-300 mb-2 uppercase tracking-wide">
-                                    Funciones Protegidas
-                                </h3>
-                                <div className="space-y-1">
-                                    {allNavItems.filter(item => item.requireAuth).map((item) => (
-                                        <div
-                                            key={item.path}
-                                            className="flex items-center space-x-2 p-2 text-blue-200/70 text-sm rounded-lg cursor-not-allowed"
-                                        >
-                                            <i className={`${item.icon} text-sm opacity-70`}></i>
-                                            <span className="text-xs">{item.label}</span>
-                                            <i className="fas fa-lock text-xs ml-auto"></i>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
+                    <div className="p-4 border-t border-gray-200/50 mt-auto">
                         {!isCollapsed ? (
-                            <button
-                                onClick={() => {
-                                    document.dispatchEvent(new CustomEvent('showLogin'));
-                                }}
-                                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center space-x-2"
-                            >
-                                <i className="fas fa-shield-alt"></i>
-                                <span>Iniciar Sesión</span>
-                            </button>
+                            <div className="space-y-4">
+                                <div className="text-center">
+                                    <div className="w-12 h-12 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                                        <i className="fas fa-lock text-indigo-500 text-lg"></i>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mb-4">
+                                        Inicia sesión para acceder a todas las funciones
+                                    </p>
+                                </div>
+
+                                <button
+                                    onClick={() => {
+                                        document.dispatchEvent(new CustomEvent('showLogin'));
+                                    }}
+                                    className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white px-4 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl hover:scale-105"
+                                >
+                                    <i className="fas fa-shield-halved text-sm"></i>
+                                    <span>Iniciar Sesión</span>
+                                </button>
+                            </div>
                         ) : (
                             <button
                                 onClick={() => {
                                     document.dispatchEvent(new CustomEvent('showLogin'));
                                 }}
-                                className="relative group w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white p-3 rounded-xl transition-all duration-200 flex justify-center"
+                                className="relative group w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white p-3 rounded-xl transition-all duration-200 flex justify-center shadow-lg hover:shadow-xl hover:scale-105"
                             >
-                                <i className="fas fa-shield-alt"></i>
-                                <div className="absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
-                                    Acceso Admin
+                                <i className="fas fa-shield-halved"></i>
+                                <div className="absolute left-full ml-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-xl">
+                                    Iniciar Sesión
+                                    <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-900 rotate-45"></div>
                                 </div>
                             </button>
                         )}
