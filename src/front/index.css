@@ -1317,7 +1317,8 @@ small {
   }
 
   /* Mobile-specific form improvements */
-  .form-control, .form-select {
+  .form-control,
+  .form-select {
     font-size: 16px !important; /* Prevents zoom on iOS */
     padding: 12px 14px;
   }
@@ -1345,7 +1346,8 @@ small {
     font-size: 12px;
   }
 
-  .table th, .table td {
+  .table th,
+  .table td {
     padding: 8px 4px;
     font-size: 12px;
   }
@@ -1416,4 +1418,66 @@ small {
   .d-flex.gap-3 .btn {
     width: 100% !important;
   }
+}
+
+/* Ultra Professional Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slideInUp {
+  animation: slideInUp 0.4s ease-out;
+}
+
+.animate-pulse {
+  animation: pulse 2s infinite;
+}
+
+/* Glassmorphism utility classes */
+.glass {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
 }
