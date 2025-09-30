@@ -1,8 +1,8 @@
 """
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
-from flask import Flask, request, jsonify, url_for, Blueprint
-from api.models import db, User, Task, Ticket, CalendarEvent, Matrix
+from flask import Flask, request, jsonify, url_for, Blueprint, make_response
+from api.models import db, User, Task, Ticket, CalendarEvent, Matrix, JournalEntry
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
 from datetime import datetime
@@ -639,14 +639,14 @@ def admin_login():
 
         # Check if admin exists in database
         admin_user = User.query.filter_by(email=username, role='admin').first()
-        
+
         if admin_user and admin_user.is_active:
             # Check password (in production, use proper hashing)
             if admin_user.password == password:
                 # Update last login
                 admin_user.last_login = datetime.utcnow()
                 db.session.commit()
-                
+
                 return jsonify({
                     "success": True,
                     "message": "Login successful",
@@ -659,7 +659,7 @@ def admin_login():
                     },
                     "expires_in": 3600
                 }), 200
-        
+
         # Fallback to hardcoded credentials for backward compatibility
         if username == "admin" and password == "admin123":
             return jsonify({
@@ -674,7 +674,7 @@ def admin_login():
                 },
                 "expires_in": 3600
             }), 200
-        
+
         return jsonify({"error": "Invalid credentials"}), 401
 
     except Exception as e:
@@ -855,18 +855,18 @@ def change_admin_password():
 
         # Find the admin user in database
         admin_user = User.query.filter_by(id=user_id, role='admin').first()
-        
+
         if admin_user:
             # Verify current password
             if admin_user.password != current_password:
                 # Try fallback hardcoded password
                 if current_password != "admin123":
                     return jsonify({"error": "Current password is incorrect"}), 400
-            
+
             # Update password in database
             admin_user.password = new_password
             db.session.commit()
-            
+
             return jsonify({
                 "success": True,
                 "message": "Password changed successfully",
@@ -885,7 +885,7 @@ def change_admin_password():
             )
             db.session.add(new_admin)
             db.session.commit()
-            
+
             return jsonify({
                 "success": True,
                 "message": "Admin user created with new password",
@@ -931,3 +931,368 @@ def get_storage_info():
             "status": "warning",
             "note": f"Could not get real storage info: {str(e)}"
         }), 200
+
+
+# JOURNAL/LOGBOOK ROUTES
+
+@api.route('/journal', methods=['GET'])
+@admin_required
+def get_journal_entries():
+    """Get all journal entries for the authenticated user"""
+    try:
+        # Get query parameters for filtering
+        date_from = request.args.get('date_from')
+        date_to = request.args.get('date_to')
+        category = request.args.get('category')
+        status = request.args.get('status')
+
+        # Base query
+        query = JournalEntry.query
+
+        # Apply filters
+        if date_from:
+            query = query.filter(JournalEntry.entry_date >=
+                                 datetime.fromisoformat(date_from))
+        if date_to:
+            query = query.filter(JournalEntry.entry_date <=
+                                 datetime.fromisoformat(date_to))
+        if category:
+            query = query.filter(JournalEntry.category == category)
+        if status:
+            query = query.filter(JournalEntry.status == status)
+
+        # Order by entry date descending (most recent first)
+        entries = query.order_by(JournalEntry.entry_date.desc()).all()
+
+        return jsonify([entry.serialize() for entry in entries]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/journal', methods=['POST'])
+@admin_required
+def create_journal_entry():
+    """Create a new journal entry"""
+    try:
+        data = request.get_json()
+
+        if not data.get('title'):
+            return jsonify({"error": "Title is required"}), 400
+        if not data.get('content'):
+            return jsonify({"error": "Content is required"}), 400
+
+        # Parse entry date
+        entry_date = datetime.utcnow()
+        if data.get('entry_date'):
+            try:
+                entry_date = datetime.fromisoformat(
+                    data.get('entry_date').replace('Z', '+00:00'))
+            except (ValueError, TypeError):
+                return jsonify({"error": "Invalid entry_date format"}), 400
+
+        new_entry = JournalEntry(
+            title=data.get('title'),
+            content=data.get('content'),
+            entry_date=entry_date,
+            category=data.get('category', 'work'),
+            priority=data.get('priority', 'medium'),
+            status=data.get('status', 'pending'),
+            user_id=data.get('user_id', 1),  # Default to admin user
+            hours_worked=data.get('hours_worked'),
+            location=data.get('location'),
+            tags=",".join(data.get('tags', [])) if data.get('tags') else None,
+            attachments=data.get('attachments', [])
+        )
+
+        db.session.add(new_entry)
+        db.session.commit()
+
+        return jsonify(new_entry.serialize()), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/journal/<int:entry_id>', methods=['GET'])
+@admin_required
+def get_journal_entry(entry_id):
+    """Get a specific journal entry"""
+    try:
+        entry = JournalEntry.query.get_or_404(entry_id)
+        return jsonify(entry.serialize()), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/journal/<int:entry_id>', methods=['PUT'])
+@admin_required
+def update_journal_entry(entry_id):
+    """Update a journal entry"""
+    try:
+        entry = JournalEntry.query.get_or_404(entry_id)
+        data = request.get_json()
+
+        if 'title' in data:
+            entry.title = data['title']
+        if 'content' in data:
+            entry.content = data['content']
+        if 'entry_date' in data:
+            entry.entry_date = datetime.fromisoformat(
+                data['entry_date'].replace('Z', '+00:00'))
+        if 'category' in data:
+            entry.category = data['category']
+        if 'priority' in data:
+            entry.priority = data['priority']
+        if 'status' in data:
+            entry.status = data['status']
+        if 'hours_worked' in data:
+            entry.hours_worked = data['hours_worked']
+        if 'location' in data:
+            entry.location = data['location']
+        if 'tags' in data:
+            entry.tags = ",".join(data['tags']) if data['tags'] else None
+        if 'attachments' in data:
+            entry.attachments = data['attachments']
+
+        entry.updated_at = datetime.utcnow()
+        db.session.commit()
+
+        return jsonify(entry.serialize()), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/journal/<int:entry_id>', methods=['DELETE'])
+@admin_required
+def delete_journal_entry(entry_id):
+    """Delete a journal entry"""
+    try:
+        entry = JournalEntry.query.get_or_404(entry_id)
+        db.session.delete(entry)
+        db.session.commit()
+        return jsonify({"message": "Journal entry deleted successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/journal/stats', methods=['GET'])
+@admin_required
+def get_journal_stats():
+    """Get journal statistics"""
+    try:
+        # Get date range for filtering (default to current month)
+        from datetime import date, timedelta
+
+        today = date.today()
+        start_of_month = today.replace(day=1)
+        end_of_month = date(today.year, today.month + 1, 1) - timedelta(
+            days=1) if today.month < 12 else date(today.year + 1, 1, 1) - timedelta(days=1)
+
+        # Query entries for the current month
+        entries = JournalEntry.query.filter(
+            JournalEntry.entry_date >= start_of_month,
+            JournalEntry.entry_date <= end_of_month
+        ).all()
+
+        # Calculate statistics
+        total_entries = len(entries)
+        total_hours = sum(entry.hours_worked or 0 for entry in entries)
+
+        # Group by category
+        categories = {}
+        statuses = {}
+
+        for entry in entries:
+            categories[entry.category] = categories.get(entry.category, 0) + 1
+            statuses[entry.status] = statuses.get(entry.status, 0) + 1
+
+        return jsonify({
+            "total_entries": total_entries,
+            "total_hours": round(total_hours, 2),
+            "categories": categories,
+            "statuses": statuses,
+            "period": {
+                "start": start_of_month.isoformat(),
+                "end": end_of_month.isoformat()
+            }
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# EXPORT ROUTES
+
+@api.route('/tickets/export/pdf', methods=['GET'])
+@admin_required
+def export_tickets_pdf():
+    """Export tickets to PDF"""
+    try:
+        from api.export_utils import export_manager
+
+        tickets = Ticket.query.all()
+        tickets_data = [ticket.serialize() for ticket in tickets]
+
+        pdf_buffer = export_manager.export_tickets_pdf(tickets_data)
+
+        response = make_response(pdf_buffer.getvalue())
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers[
+            'Content-Disposition'] = f'attachment; filename=tickets_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+
+        return response
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/tickets/export/excel', methods=['GET'])
+@admin_required
+def export_tickets_excel():
+    """Export tickets to Excel"""
+    try:
+        from api.export_utils import export_manager
+
+        tickets = Ticket.query.all()
+        tickets_data = [ticket.serialize() for ticket in tickets]
+
+        excel_buffer = export_manager.export_tickets_excel(tickets_data)
+
+        response = make_response(excel_buffer.getvalue())
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers[
+            'Content-Disposition'] = f'attachment; filename=tickets_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+
+        return response
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/matrices/export/pdf', methods=['GET'])
+@admin_required
+def export_matrices_pdf():
+    """Export matrices to PDF"""
+    try:
+        from api.export_utils import export_manager
+
+        matrices = Matrix.query.all()
+        matrices_data = [matrix.serialize() for matrix in matrices]
+
+        pdf_buffer = export_manager.export_matrices_pdf(matrices_data)
+
+        response = make_response(pdf_buffer.getvalue())
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers[
+            'Content-Disposition'] = f'attachment; filename=matrices_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+
+        return response
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/matrices/export/excel', methods=['GET'])
+@admin_required
+def export_matrices_excel():
+    """Export matrices to Excel"""
+    try:
+        from api.export_utils import export_manager
+
+        matrices = Matrix.query.all()
+        matrices_data = [matrix.serialize() for matrix in matrices]
+
+        excel_buffer = export_manager.export_matrices_excel(matrices_data)
+
+        response = make_response(excel_buffer.getvalue())
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers[
+            'Content-Disposition'] = f'attachment; filename=matrices_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+
+        return response
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/journal/export/pdf', methods=['GET'])
+@admin_required
+def export_journal_pdf():
+    """Export journal entries to PDF"""
+    try:
+        from api.export_utils import export_manager
+
+        # Get query parameters for filtering
+        date_from = request.args.get('date_from')
+        date_to = request.args.get('date_to')
+        category = request.args.get('category')
+        status = request.args.get('status')
+
+        # Base query
+        query = JournalEntry.query
+
+        # Apply filters
+        if date_from:
+            query = query.filter(JournalEntry.entry_date >=
+                                 datetime.fromisoformat(date_from))
+        if date_to:
+            query = query.filter(JournalEntry.entry_date <=
+                                 datetime.fromisoformat(date_to))
+        if category:
+            query = query.filter(JournalEntry.category == category)
+        if status:
+            query = query.filter(JournalEntry.status == status)
+
+        journal_entries = query.order_by(JournalEntry.entry_date.desc()).all()
+        journal_data = [entry.serialize() for entry in journal_entries]
+
+        pdf_buffer = export_manager.export_journal_pdf(journal_data)
+
+        response = make_response(pdf_buffer.getvalue())
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers[
+            'Content-Disposition'] = f'attachment; filename=journal_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+
+        return response
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/journal/export/excel', methods=['GET'])
+@admin_required
+def export_journal_excel():
+    """Export journal entries to Excel"""
+    try:
+        from api.export_utils import export_manager
+
+        # Get query parameters for filtering
+        date_from = request.args.get('date_from')
+        date_to = request.args.get('date_to')
+        category = request.args.get('category')
+        status = request.args.get('status')
+
+        # Base query
+        query = JournalEntry.query
+
+        # Apply filters
+        if date_from:
+            query = query.filter(JournalEntry.entry_date >=
+                                 datetime.fromisoformat(date_from))
+        if date_to:
+            query = query.filter(JournalEntry.entry_date <=
+                                 datetime.fromisoformat(date_to))
+        if category:
+            query = query.filter(JournalEntry.category == category)
+        if status:
+            query = query.filter(JournalEntry.status == status)
+
+        journal_entries = query.order_by(JournalEntry.entry_date.desc()).all()
+        journal_data = [entry.serialize() for entry in journal_entries]
+
+        excel_buffer = export_manager.export_journal_excel(journal_data)
+
+        response = make_response(excel_buffer.getvalue())
+        response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        response.headers[
+            'Content-Disposition'] = f'attachment; filename=journal_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+
+        return response
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

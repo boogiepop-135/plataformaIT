@@ -24,3 +24,6 @@ sqlalchemy==2.0.23
 urllib3==2.0.7
 werkzeug==3.0.1
 wtforms==3.1.0
+reportlab==4.0.4
+openpyxl==3.1.2
+pandas==2.0.3

@@ -182,6 +182,51 @@ class Matrix(db.Model):
         }
 
 
+class JournalEntry(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    entry_date = db.Column(db.DateTime, nullable=False,
+                           default=datetime.utcnow)
+    # work, personal, meeting, maintenance, issue, achievement, note
+    category = db.Column(db.String(50), default="work")
+    # low, medium, high, urgent
+    priority = db.Column(db.String(50), default="medium")
+    # pending, completed, cancelled
+    status = db.Column(db.String(50), default="pending")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    # Campos adicionales para la bitácora
+    hours_worked = db.Column(db.Float, nullable=True)  # Horas trabajadas
+    location = db.Column(db.String(200), nullable=True)  # Ubicación/Oficina
+    tags = db.Column(db.Text, nullable=True)  # Tags separados por comas
+    # Referencias a archivos adjuntos
+    attachments = db.Column(db.JSON, nullable=True)
+
+    user = db.relationship("User", backref="journal_entries")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "content": self.content,
+            "entry_date": self.entry_date.isoformat() if self.entry_date else None,
+            "category": self.category,
+            "priority": self.priority,
+            "status": self.status,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "user_id": self.user_id,
+            "hours_worked": self.hours_worked,
+            "location": self.location,
+            "tags": self.tags.split(",") if self.tags else [],
+            "attachments": self.attachments if self.attachments else [],
+        }
+
+
 class Admin(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)

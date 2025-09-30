@@ -13,6 +13,7 @@ import { Calendar } from "./pages/Calendar";
 import { Single } from "./pages/Single";
 import { Demo } from "./pages/Demo";
 import MatrixManager from "./pages/MatrixManager";
+import Journal from "./pages/Journal";
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
@@ -31,6 +32,7 @@ export const router = createBrowserRouter(
       <Route path="/tickets" element={<TicketSystem />} />
       <Route path="/calendar" element={<Calendar />} />
       <Route path="/matrices" element={<MatrixManager />} />
+      <Route path="/journal" element={<Journal />} />
       <Route path="/single/:theId" element={<Single />} />  {/* Dynamic route for single items */}
       <Route path="/demo" element={<Demo />} />
     </Route>

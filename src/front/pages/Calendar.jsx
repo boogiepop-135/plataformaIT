@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import BACKEND_URL from "../config/backend.js";
 import { useAuth } from "../hooks/useAuth.jsx";
+import { ProtectedRoute } from "../components/ProtectedRoute.jsx";
 
 export const Calendar = () => {
     const { isAuthenticated, getAuthHeaders } = useAuth();
@@ -553,328 +554,285 @@ export const Calendar = () => {
     };
 
     return (
-        <div className="container-fluid mt-4">
-            <div className="row">
-                <div className="col-lg-9">
-                    <div className="card">
-                        <div className="card-header d-flex justify-content-between align-items-center">
-                            <h2 className="mb-0">
-                                {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-                            </h2>
-                            <div className="btn-group">
-                                <button
-                                    className="btn btn-outline-primary"
-                                    onClick={() => navigateMonth(-1)}
-                                >
-                                    <i className="fas fa-chevron-left"></i>
-                                </button>
-                                <button
-                                    className="btn btn-outline-primary"
-                                    onClick={navigateToToday}
-                                >
-                                    Hoy
-                                </button>
-                                <button
-                                    className="btn btn-outline-primary"
-                                    onClick={() => navigateMonth(1)}
-                                >
-                                    <i className="fas fa-chevron-right"></i>
-                                </button>
-                                <button
-                                    className="btn btn-primary"
-                                    onClick={() => setShowEventModal(true)}
-                                >
-                                    <i className="fas fa-plus me-2"></i>Nuevo Evento
-                                </button>
-                            </div>
-                        </div>
-                        <div className="card-body p-0">
-                            <div className="calendar-container">
-                                <div className="calendar-header">
-                                    {dayNames.map(day => (
-                                        <div key={day} className="calendar-day-header">
-                                            {day}
-                                        </div>
-                                    ))}
+        <ProtectedRoute requireAuth={true}>
+            <div className="container-fluid mt-4">
+                <div className="row">
+                    <div className="col-lg-9">
+                        <div className="card">
+                            <div className="card-header d-flex justify-content-between align-items-center">
+                                <h2 className="mb-0">
+                                    {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+                                </h2>
+                                <div className="btn-group">
+                                    <button
+                                        className="btn btn-outline-primary"
+                                        onClick={() => navigateMonth(-1)}
+                                    >
+                                        <i className="fas fa-chevron-left"></i>
+                                    </button>
+                                    <button
+                                        className="btn btn-outline-primary"
+                                        onClick={navigateToToday}
+                                    >
+                                        Hoy
+                                    </button>
+                                    <button
+                                        className="btn btn-outline-primary"
+                                        onClick={() => navigateMonth(1)}
+                                    >
+                                        <i className="fas fa-chevron-right"></i>
+                                    </button>
+                                    <button
+                                        className="btn btn-primary"
+                                        onClick={() => setShowEventModal(true)}
+                                    >
+                                        <i className="fas fa-plus me-2"></i>Nuevo Evento
+                                    </button>
                                 </div>
-                                <div className="calendar-grid">
-                                    {renderMonthView()}
+                            </div>
+                            <div className="card-body p-0">
+                                <div className="calendar-container">
+                                    <div className="calendar-header">
+                                        {dayNames.map(day => (
+                                            <div key={day} className="calendar-day-header">
+                                                {day}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="calendar-grid">
+                                        {renderMonthView()}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="col-lg-3">
-                    <div className="card">
-                        <div className="card-header bg-primary text-white">
-                            <h5 className="mb-0 text-white">Próximos Eventos</h5>
-                        </div>
-                        <div className="card-body">
-                            {getUpcomingEvents().length === 0 ? (
-                                <p className="text-dark fw-bold">No hay eventos próximos</p>
-                            ) : (
-                                getUpcomingEvents().map(event => {
-                                    const typeInfo = getEventTypeInfo(event.event_type);
-                                    return (
-                                        <div key={event.id} className="mb-3 p-2 border rounded bg-light">
-                                            <div className="d-flex justify-content-between align-items-start">
-                                                <div className="flex-grow-1">
-                                                    <div className="d-flex align-items-center mb-1">
-                                                        <span className={`badge bg-${typeInfo.color} me-2`}>
-                                                            <i className={`${typeInfo.icon} me-1`}></i>
-                                                            {typeInfo.label}
-                                                        </span>
-                                                    </div>
-                                                    <h6 className="mb-1 text-dark fw-bold">{event.title}</h6>
-                                                    <small className="text-dark fw-bold">
-                                                        <i className="fas fa-calendar me-1"></i>
-                                                        {new Date(event.start_date).toLocaleDateString()}
-                                                        {!event.all_day && (
-                                                            <span>
-                                                                {" - "}
-                                                                {new Date(event.start_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <div className="col-lg-3">
+                        <div className="card">
+                            <div className="card-header bg-primary text-white">
+                                <h5 className="mb-0 text-white">Próximos Eventos</h5>
+                            </div>
+                            <div className="card-body">
+                                {getUpcomingEvents().length === 0 ? (
+                                    <p className="text-dark fw-bold">No hay eventos próximos</p>
+                                ) : (
+                                    getUpcomingEvents().map(event => {
+                                        const typeInfo = getEventTypeInfo(event.event_type);
+                                        return (
+                                            <div key={event.id} className="mb-3 p-2 border rounded bg-light">
+                                                <div className="d-flex justify-content-between align-items-start">
+                                                    <div className="flex-grow-1">
+                                                        <div className="d-flex align-items-center mb-1">
+                                                            <span className={`badge bg-${typeInfo.color} me-2`}>
+                                                                <i className={`${typeInfo.icon} me-1`}></i>
+                                                                {typeInfo.label}
                                                             </span>
-                                                        )}
-                                                    </small>
-                                                    {event.location && (
-                                                        <div>
-                                                            <small className="text-dark fw-bold">
-                                                                <i className="fas fa-map-marker-alt me-1"></i>
-                                                                {event.location}
-                                                            </small>
                                                         </div>
-                                                    )}
-                                                </div>
-                                                <div className="dropdown">
-                                                    <button
-                                                        className="btn btn-sm btn-outline-secondary"
-                                                        type="button"
-                                                        onClick={() => handleEditEvent(event)}
-                                                    >
-                                                        <i className="fas fa-edit"></i>
-                                                    </button>
+                                                        <h6 className="mb-1 text-dark fw-bold">{event.title}</h6>
+                                                        <small className="text-dark fw-bold">
+                                                            <i className="fas fa-calendar me-1"></i>
+                                                            {new Date(event.start_date).toLocaleDateString()}
+                                                            {!event.all_day && (
+                                                                <span>
+                                                                    {" - "}
+                                                                    {new Date(event.start_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                </span>
+                                                            )}
+                                                        </small>
+                                                        {event.location && (
+                                                            <div>
+                                                                <small className="text-dark fw-bold">
+                                                                    <i className="fas fa-map-marker-alt me-1"></i>
+                                                                    {event.location}
+                                                                </small>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="dropdown">
+                                                        <button
+                                                            className="btn btn-sm btn-outline-secondary"
+                                                            type="button"
+                                                            onClick={() => handleEditEvent(event)}
+                                                        >
+                                                            <i className="fas fa-edit"></i>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    );
-                                })
-                            )}
+                                        );
+                                    })
+                                )}
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Event Types Legend */}
-                    <div className="card mt-3">
-                        <div className="card-header bg-dark text-white">
-                            <h6 className="mb-0 text-white">Tipos de Eventos</h6>
-                        </div>
-                        <div className="card-body">
-                            {eventTypes.map(type => (
-                                <div key={type.value} className="d-flex align-items-center mb-2">
-                                    <span className={`badge bg-${type.color} me-2`}>
-                                        <i className={`${type.icon}`}></i>
-                                    </span>
-                                    <span className="text-dark fw-bold">{type.label}</span>
-                                </div>
-                            ))}
+                        {/* Event Types Legend */}
+                        <div className="card mt-3">
+                            <div className="card-header bg-dark text-white">
+                                <h6 className="mb-0 text-white">Tipos de Eventos</h6>
+                            </div>
+                            <div className="card-body">
+                                {eventTypes.map(type => (
+                                    <div key={type.value} className="d-flex align-items-center mb-2">
+                                        <span className={`badge bg-${type.color} me-2`}>
+                                            <i className={`${type.icon}`}></i>
+                                        </span>
+                                        <span className="text-dark fw-bold">{type.label}</span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Event Modal */}
-            {showEventModal && (
-                <div className="modal show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-                    <div className="modal-dialog">
-                        <div className="modal-content">
-                            <div className="modal-header">
-                                <h5 className="modal-title">
-                                    {editingEvent ? "Editar Evento" : "Nuevo Evento"}
-                                </h5>
-                                <button
-                                    type="button"
-                                    className="btn-close"
-                                    onClick={() => {
-                                        setShowEventModal(false);
-                                        setEditingEvent(null);
-                                        setSelectedDate(null);
-                                        resetEventForm();
-                                    }}
-                                ></button>
-                            </div>
-                            <div className="modal-body">
-                                <form>
-                                    <div className="mb-3">
-                                        <label className="form-label">Título *</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            value={newEvent.title}
-                                            onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="mb-3">
-                                        <label className="form-label">Descripción</label>
-                                        <textarea
-                                            className="form-control"
-                                            rows="3"
-                                            value={newEvent.description}
-                                            onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                                        ></textarea>
-                                    </div>
-                                    <div className="mb-3">
-                                        <label className="form-label">Tipo de Evento</label>
-                                        <select
-                                            className="form-select"
-                                            value={newEvent.event_type}
-                                            onChange={(e) => setNewEvent({ ...newEvent, event_type: e.target.value })}
-                                        >
-                                            {eventTypes.map(type => (
-                                                <option key={type.value} value={type.value}>
-                                                    {type.label}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="row">
-                                        <div className="col-md-6">
-                                            <div className="mb-3">
-                                                <label className="form-label">Fecha de inicio *</label>
-                                                <input
-                                                    type="date"
-                                                    className="form-control"
-                                                    value={newEvent.start_date}
-                                                    onChange={(e) => setNewEvent({ ...newEvent, start_date: e.target.value })}
-                                                    required
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="col-md-6">
-                                            <div className="mb-3">
-                                                <label className="form-label">Fecha de fin</label>
-                                                <input
-                                                    type="date"
-                                                    className="form-control"
-                                                    value={newEvent.end_date}
-                                                    onChange={(e) => setNewEvent({ ...newEvent, end_date: e.target.value })}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="mb-3">
-                                        <div className="form-check">
+                {/* Event Modal */}
+                {showEventModal && (
+                    <div className="modal show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+                        <div className="modal-dialog">
+                            <div className="modal-content">
+                                <div className="modal-header">
+                                    <h5 className="modal-title">
+                                        {editingEvent ? "Editar Evento" : "Nuevo Evento"}
+                                    </h5>
+                                    <button
+                                        type="button"
+                                        className="btn-close"
+                                        onClick={() => {
+                                            setShowEventModal(false);
+                                            setEditingEvent(null);
+                                            setSelectedDate(null);
+                                            resetEventForm();
+                                        }}
+                                    ></button>
+                                </div>
+                                <div className="modal-body">
+                                    <form>
+                                        <div className="mb-3">
+                                            <label className="form-label">Título *</label>
                                             <input
-                                                className="form-check-input"
-                                                type="checkbox"
-                                                checked={newEvent.all_day}
-                                                onChange={(e) => setNewEvent({ ...newEvent, all_day: e.target.checked })}
+                                                type="text"
+                                                className="form-control"
+                                                value={newEvent.title}
+                                                onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                                                required
                                             />
-                                            <label className="form-check-label">
-                                                Todo el día
-                                            </label>
                                         </div>
-                                    </div>
-                                    <div className="mb-3">
-                                        <label className="form-label">Ubicación</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            value={newEvent.location}
-                                            onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
-                                            placeholder="Ubicación del evento"
-                                        />
-                                    </div>
-
-                                    {/* Maintenance Fields - Show only for maintenance type events */}
-                                    {newEvent.event_type === "maintenance" && (
-                                        <div className="card mb-3" style={{ backgroundColor: "var(--background-light)", border: "1px solid var(--primary-color)" }}>
-                                            <div className="card-header bg-primary text-white">
-                                                <h6 className="card-title mb-0">
-                                                    <i className="fas fa-tools me-2"></i>
-                                                    Información de Mantenimiento
-                                                </h6>
+                                        <div className="mb-3">
+                                            <label className="form-label">Descripción</label>
+                                            <textarea
+                                                className="form-control"
+                                                rows="3"
+                                                value={newEvent.description}
+                                                onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                                            ></textarea>
+                                        </div>
+                                        <div className="mb-3">
+                                            <label className="form-label">Tipo de Evento</label>
+                                            <select
+                                                className="form-select"
+                                                value={newEvent.event_type}
+                                                onChange={(e) => setNewEvent({ ...newEvent, event_type: e.target.value })}
+                                            >
+                                                {eventTypes.map(type => (
+                                                    <option key={type.value} value={type.value}>
+                                                        {type.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="row">
+                                            <div className="col-md-6">
+                                                <div className="mb-3">
+                                                    <label className="form-label">Fecha de inicio *</label>
+                                                    <input
+                                                        type="date"
+                                                        className="form-control"
+                                                        value={newEvent.start_date}
+                                                        onChange={(e) => setNewEvent({ ...newEvent, start_date: e.target.value })}
+                                                        required
+                                                    />
+                                                </div>
                                             </div>
-                                            <div className="card-body">
-                                                <div className="row">
-                                                    <div className="col-md-6 mb-3">
-                                                        <label className="form-label">Equipo</label>
-                                                        <input
-                                                            type="text"
-                                                            className="form-control"
-                                                            value={newEvent.equipment}
-                                                            onChange={(e) => setNewEvent({ ...newEvent, equipment: e.target.value })}
-                                                            placeholder="Nombre del equipo"
-                                                        />
-                                                    </div>
-                                                    <div className="col-md-6 mb-3">
-                                                        <label className="form-label">Sucursal</label>
-                                                        <select
-                                                            className="form-select"
-                                                            value={newEvent.branch}
-                                                            onChange={(e) => setNewEvent({ ...newEvent, branch: e.target.value })}
-                                                        >
-                                                            <option value="">Seleccionar sucursal</option>
-                                                            {branches.map(branch => (
-                                                                <option key={branch.value} value={branch.value}>
-                                                                    {branch.label}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                    <div className="col-12 mb-3">
-                                                        <label className="form-label">Tipo de Mantenimiento</label>
-                                                        <select
-                                                            className="form-select"
-                                                            value={newEvent.maintenance_type}
-                                                            onChange={(e) => setNewEvent({ ...newEvent, maintenance_type: e.target.value })}
-                                                        >
-                                                            <option value="">Seleccionar tipo</option>
-                                                            {maintenanceTypes.map(type => (
-                                                                <option key={type.value} value={type.value}>
-                                                                    {type.label}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
+                                            <div className="col-md-6">
+                                                <div className="mb-3">
+                                                    <label className="form-label">Fecha de fin</label>
+                                                    <input
+                                                        type="date"
+                                                        className="form-control"
+                                                        value={newEvent.end_date}
+                                                        onChange={(e) => setNewEvent({ ...newEvent, end_date: e.target.value })}
+                                                    />
                                                 </div>
                                             </div>
                                         </div>
-                                    )}
-
-                                    {/* Recurrence Section */}
-                                    <div className="mb-3">
-                                        <div className="form-check">
-                                            <input
-                                                className="form-check-input"
-                                                type="checkbox"
-                                                checked={newEvent.is_recurring}
-                                                onChange={(e) => setNewEvent({ ...newEvent, is_recurring: e.target.checked })}
-                                            />
-                                            <label className="form-check-label">
-                                                <i className="fas fa-repeat me-1"></i>
-                                                Evento recurrente
-                                            </label>
+                                        <div className="mb-3">
+                                            <div className="form-check">
+                                                <input
+                                                    className="form-check-input"
+                                                    type="checkbox"
+                                                    checked={newEvent.all_day}
+                                                    onChange={(e) => setNewEvent({ ...newEvent, all_day: e.target.checked })}
+                                                />
+                                                <label className="form-check-label">
+                                                    Todo el día
+                                                </label>
+                                            </div>
                                         </div>
-                                    </div>
+                                        <div className="mb-3">
+                                            <label className="form-label">Ubicación</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={newEvent.location}
+                                                onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
+                                                placeholder="Ubicación del evento"
+                                            />
+                                        </div>
 
-                                    {newEvent.is_recurring && (
-                                        <div className="card mb-3" style={{ backgroundColor: "var(--background-light)" }}>
-                                            <div className="card-body">
-                                                <h6 className="card-title">
-                                                    <i className="fas fa-cog me-1"></i>
-                                                    Configuración de Recurrencia
-                                                </h6>
-                                                <div className="row">
-                                                    <div className="col-md-6">
-                                                        <div className="mb-3">
-                                                            <label className="form-label">Tipo de repetición</label>
+                                        {/* Maintenance Fields - Show only for maintenance type events */}
+                                        {newEvent.event_type === "maintenance" && (
+                                            <div className="card mb-3" style={{ backgroundColor: "var(--background-light)", border: "1px solid var(--primary-color)" }}>
+                                                <div className="card-header bg-primary text-white">
+                                                    <h6 className="card-title mb-0">
+                                                        <i className="fas fa-tools me-2"></i>
+                                                        Información de Mantenimiento
+                                                    </h6>
+                                                </div>
+                                                <div className="card-body">
+                                                    <div className="row">
+                                                        <div className="col-md-6 mb-3">
+                                                            <label className="form-label">Equipo</label>
+                                                            <input
+                                                                type="text"
+                                                                className="form-control"
+                                                                value={newEvent.equipment}
+                                                                onChange={(e) => setNewEvent({ ...newEvent, equipment: e.target.value })}
+                                                                placeholder="Nombre del equipo"
+                                                            />
+                                                        </div>
+                                                        <div className="col-md-6 mb-3">
+                                                            <label className="form-label">Sucursal</label>
                                                             <select
                                                                 className="form-select"
-                                                                value={newEvent.recurrence_type}
-                                                                onChange={(e) => setNewEvent({ ...newEvent, recurrence_type: e.target.value })}
+                                                                value={newEvent.branch}
+                                                                onChange={(e) => setNewEvent({ ...newEvent, branch: e.target.value })}
                                                             >
-                                                                {recurrenceTypes.map(type => (
+                                                                <option value="">Seleccionar sucursal</option>
+                                                                {branches.map(branch => (
+                                                                    <option key={branch.value} value={branch.value}>
+                                                                        {branch.label}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                        <div className="col-12 mb-3">
+                                                            <label className="form-label">Tipo de Mantenimiento</label>
+                                                            <select
+                                                                className="form-select"
+                                                                value={newEvent.maintenance_type}
+                                                                onChange={(e) => setNewEvent({ ...newEvent, maintenance_type: e.target.value })}
+                                                            >
+                                                                <option value="">Seleccionar tipo</option>
+                                                                {maintenanceTypes.map(type => (
                                                                     <option key={type.value} value={type.value}>
                                                                         {type.label}
                                                                     </option>
@@ -882,129 +840,173 @@ export const Calendar = () => {
                                                             </select>
                                                         </div>
                                                     </div>
-                                                    <div className="col-md-6">
-                                                        {(newEvent.recurrence_type === "daily" || newEvent.recurrence_type === "custom_days") && (
-                                                            <div className="mb-3">
-                                                                <label className="form-label">
-                                                                    {newEvent.recurrence_type === "daily" ? "Cada X días" : "Cada X días (ej: 25)"}
-                                                                </label>
-                                                                <input
-                                                                    type="number"
-                                                                    className="form-control"
-                                                                    min="1"
-                                                                    max="365"
-                                                                    value={newEvent.recurrence_interval}
-                                                                    onChange={(e) => setNewEvent({ ...newEvent, recurrence_interval: parseInt(e.target.value) })}
-                                                                />
-                                                            </div>
-                                                        )}
-                                                        {newEvent.recurrence_type === "weekly" && (
-                                                            <div className="mb-3">
-                                                                <label className="form-label">Cada X semanas</label>
-                                                                <input
-                                                                    type="number"
-                                                                    className="form-control"
-                                                                    min="1"
-                                                                    max="52"
-                                                                    value={newEvent.recurrence_interval}
-                                                                    onChange={(e) => setNewEvent({ ...newEvent, recurrence_interval: parseInt(e.target.value) })}
-                                                                />
-                                                            </div>
-                                                        )}
-                                                        {newEvent.recurrence_type === "monthly" && (
-                                                            <div className="mb-3">
-                                                                <label className="form-label">Cada X meses</label>
-                                                                <input
-                                                                    type="number"
-                                                                    className="form-control"
-                                                                    min="1"
-                                                                    max="12"
-                                                                    value={newEvent.recurrence_interval}
-                                                                    onChange={(e) => setNewEvent({ ...newEvent, recurrence_interval: parseInt(e.target.value) })}
-                                                                />
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="mb-3">
-                                                    <label className="form-label">Repetir hasta (opcional)</label>
-                                                    <input
-                                                        type="date"
-                                                        className="form-control"
-                                                        value={newEvent.recurrence_end_date}
-                                                        onChange={(e) => setNewEvent({ ...newEvent, recurrence_end_date: e.target.value })}
-                                                    />
-                                                    <div className="form-text">
-                                                        Si no se especifica, se repetirá por 1 año
-                                                    </div>
-                                                </div>
-                                                <div className="alert alert-info small">
-                                                    <i className="fas fa-info-circle me-1"></i>
-                                                    <strong>Ejemplos:</strong><br />
-                                                    • Cada 25 días: Selecciona "Cada X días" y escribe 25<br />
-                                                    • Cada semana: Selecciona "Semanalmente"<br />
-                                                    • Una semana sí, otra no: Selecciona "Cada 2 semanas"
                                                 </div>
                                             </div>
+                                        )}
+
+                                        {/* Recurrence Section */}
+                                        <div className="mb-3">
+                                            <div className="form-check">
+                                                <input
+                                                    className="form-check-input"
+                                                    type="checkbox"
+                                                    checked={newEvent.is_recurring}
+                                                    onChange={(e) => setNewEvent({ ...newEvent, is_recurring: e.target.checked })}
+                                                />
+                                                <label className="form-check-label">
+                                                    <i className="fas fa-repeat me-1"></i>
+                                                    Evento recurrente
+                                                </label>
+                                            </div>
                                         </div>
+
+                                        {newEvent.is_recurring && (
+                                            <div className="card mb-3" style={{ backgroundColor: "var(--background-light)" }}>
+                                                <div className="card-body">
+                                                    <h6 className="card-title">
+                                                        <i className="fas fa-cog me-1"></i>
+                                                        Configuración de Recurrencia
+                                                    </h6>
+                                                    <div className="row">
+                                                        <div className="col-md-6">
+                                                            <div className="mb-3">
+                                                                <label className="form-label">Tipo de repetición</label>
+                                                                <select
+                                                                    className="form-select"
+                                                                    value={newEvent.recurrence_type}
+                                                                    onChange={(e) => setNewEvent({ ...newEvent, recurrence_type: e.target.value })}
+                                                                >
+                                                                    {recurrenceTypes.map(type => (
+                                                                        <option key={type.value} value={type.value}>
+                                                                            {type.label}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div className="col-md-6">
+                                                            {(newEvent.recurrence_type === "daily" || newEvent.recurrence_type === "custom_days") && (
+                                                                <div className="mb-3">
+                                                                    <label className="form-label">
+                                                                        {newEvent.recurrence_type === "daily" ? "Cada X días" : "Cada X días (ej: 25)"}
+                                                                    </label>
+                                                                    <input
+                                                                        type="number"
+                                                                        className="form-control"
+                                                                        min="1"
+                                                                        max="365"
+                                                                        value={newEvent.recurrence_interval}
+                                                                        onChange={(e) => setNewEvent({ ...newEvent, recurrence_interval: parseInt(e.target.value) })}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                            {newEvent.recurrence_type === "weekly" && (
+                                                                <div className="mb-3">
+                                                                    <label className="form-label">Cada X semanas</label>
+                                                                    <input
+                                                                        type="number"
+                                                                        className="form-control"
+                                                                        min="1"
+                                                                        max="52"
+                                                                        value={newEvent.recurrence_interval}
+                                                                        onChange={(e) => setNewEvent({ ...newEvent, recurrence_interval: parseInt(e.target.value) })}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                            {newEvent.recurrence_type === "monthly" && (
+                                                                <div className="mb-3">
+                                                                    <label className="form-label">Cada X meses</label>
+                                                                    <input
+                                                                        type="number"
+                                                                        className="form-control"
+                                                                        min="1"
+                                                                        max="12"
+                                                                        value={newEvent.recurrence_interval}
+                                                                        onChange={(e) => setNewEvent({ ...newEvent, recurrence_interval: parseInt(e.target.value) })}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="mb-3">
+                                                        <label className="form-label">Repetir hasta (opcional)</label>
+                                                        <input
+                                                            type="date"
+                                                            className="form-control"
+                                                            value={newEvent.recurrence_end_date}
+                                                            onChange={(e) => setNewEvent({ ...newEvent, recurrence_end_date: e.target.value })}
+                                                        />
+                                                        <div className="form-text">
+                                                            Si no se especifica, se repetirá por 1 año
+                                                        </div>
+                                                    </div>
+                                                    <div className="alert alert-info small">
+                                                        <i className="fas fa-info-circle me-1"></i>
+                                                        <strong>Ejemplos:</strong><br />
+                                                        • Cada 25 días: Selecciona "Cada X días" y escribe 25<br />
+                                                        • Cada semana: Selecciona "Semanalmente"<br />
+                                                        • Una semana sí, otra no: Selecciona "Cada 2 semanas"
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className="mb-3">
+                                            <label className="form-label">Ubicación</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={newEvent.location}
+                                                onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
+                                                placeholder="Oficina, dirección, etc."
+                                            />
+                                        </div>
+                                    </form>
+                                </div>
+                                <div className="modal-footer">
+                                    {editingEvent && (
+                                        <button
+                                            type="button"
+                                            className="btn btn-danger me-auto"
+                                            onClick={() => handleDeleteEvent(editingEvent)}
+                                        >
+                                            <i className="fas fa-trash me-1"></i>Eliminar
+                                        </button>
                                     )}
-                                    <div className="mb-3">
-                                        <label className="form-label">Ubicación</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            value={newEvent.location}
-                                            onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
-                                            placeholder="Oficina, dirección, etc."
-                                        />
-                                    </div>
-                                </form>
-                            </div>
-                            <div className="modal-footer">
-                                {editingEvent && (
                                     <button
                                         type="button"
-                                        className="btn btn-danger me-auto"
-                                        onClick={() => handleDeleteEvent(editingEvent)}
+                                        className="btn btn-secondary"
+                                        onClick={() => {
+                                            setShowEventModal(false);
+                                            setEditingEvent(null);
+                                            setSelectedDate(null);
+                                            setNewEvent({
+                                                title: "",
+                                                description: "",
+                                                event_type: "other",
+                                                start_date: "",
+                                                end_date: "",
+                                                all_day: false,
+                                                location: ""
+                                            });
+                                        }}
                                     >
-                                        <i className="fas fa-trash me-1"></i>Eliminar
+                                        Cancelar
                                     </button>
-                                )}
-                                <button
-                                    type="button"
-                                    className="btn btn-secondary"
-                                    onClick={() => {
-                                        setShowEventModal(false);
-                                        setEditingEvent(null);
-                                        setSelectedDate(null);
-                                        setNewEvent({
-                                            title: "",
-                                            description: "",
-                                            event_type: "other",
-                                            start_date: "",
-                                            end_date: "",
-                                            all_day: false,
-                                            location: ""
-                                        });
-                                    }}
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="button"
-                                    className="btn btn-primary"
-                                    onClick={handleSaveEvent}
-                                    disabled={!newEvent.title || !newEvent.start_date}
-                                >
-                                    {editingEvent ? "Actualizar" : "Crear"} Evento
-                                </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-primary"
+                                        onClick={handleSaveEvent}
+                                        disabled={!newEvent.title || !newEvent.start_date}
+                                    >
+                                        {editingEvent ? "Actualizar" : "Crear"} Evento
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            <style jsx>{`
+                <style jsx>{`
                 .calendar-container {
                     width: 100%;
                 }
@@ -1072,6 +1074,7 @@ export const Calendar = () => {
                     opacity: 0.8;
                 }
             `}</style>
-        </div>
+            </div>
+        </ProtectedRoute>
     );
 };

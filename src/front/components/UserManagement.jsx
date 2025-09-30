@@ -166,7 +166,7 @@ const UserManagement = ({ onClose }) => {
                 setSuccess(data.message || 'Contraseña cambiada exitosamente');
                 setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
                 setShowPasswordModal(false);
-                
+
                 // Show success notification
                 setTimeout(() => {
                     alert('✅ Contraseña actualizada correctamente. La nueva contraseña ya está activa.');

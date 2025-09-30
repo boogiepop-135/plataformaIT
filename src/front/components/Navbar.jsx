@@ -21,6 +21,7 @@ export const Navbar = () => {
 		{ path: "/tickets", icon: "fas fa-ticket-alt", label: "Tickets" },
 		{ path: "/calendar", icon: "fas fa-calendar-alt", label: "Calendario" },
 		{ path: "/matrices", icon: "fas fa-th", label: "Matrices" },
+		{ path: "/journal", icon: "fas fa-book", label: "Bitácora" },
 		{ path: "/demo", icon: "fas fa-flask", label: "Demo" }
 	];
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import BACKEND_URL from "../config/backend.js";
 import { useAuth } from "../hooks/useAuth.jsx";
+import { ProtectedRoute } from "../components/ProtectedRoute.jsx";
 import AuthProtectedAction from "../components/AuthProtectedAction.jsx";
 
 export const TicketSystem = () => {
@@ -142,322 +143,403 @@ export const TicketSystem = () => {
 
     const stats = getTicketStats();
 
+    const handleExportPDF = async () => {
+        if (!isAuthenticated) {
+            alert('Debe estar autenticado para exportar');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/tickets/export/pdf`, {
+                headers: getAuthHeaders()
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `tickets_export_${new Date().toISOString().split('T')[0]}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } else {
+                alert('Error al exportar PDF');
+            }
+        } catch (error) {
+            alert('Error de conexión al exportar PDF');
+        }
+    };
+
+    const handleExportExcel = async () => {
+        if (!isAuthenticated) {
+            alert('Debe estar autenticado para exportar');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/tickets/export/excel`, {
+                headers: getAuthHeaders()
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `tickets_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } else {
+                alert('Error al exportar Excel');
+            }
+        } catch (error) {
+            alert('Error de conexión al exportar Excel');
+        }
+    };
+
     return (
-        <div className="container-fluid mt-4">
-            <div className="row mb-4">
-                <div className="col-12">
-                    <div className="d-flex justify-content-between align-items-center mb-4">
-                        <h1 className="h2">Sistema de Tickets</h1>
-                        <button
-                            className="btn btn-primary"
-                            onClick={() => setShowTicketModal(true)}
-                        >
-                            <i className="fas fa-plus me-2"></i>Nuevo Ticket
-                        </button>
-                    </div>
-
-                    {/* Stats Cards */}
-                    <div className="row mb-4">
-                        <div className="col-md-2">
-                            <div className="card bg-info text-white">
-                                <div className="card-body text-center">
-                                    <h4>{stats.total}</h4>
-                                    <small>Total</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-md-2">
-                            <div className="card bg-primary text-white">
-                                <div className="card-body text-center">
-                                    <h4>{stats.open}</h4>
-                                    <small>Abiertos</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-md-2">
-                            <div className="card bg-warning text-white">
-                                <div className="card-body text-center">
-                                    <h4>{stats.inProgress}</h4>
-                                    <small>En Progreso</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-md-2">
-                            <div className="card bg-success text-white">
-                                <div className="card-body text-center">
-                                    <h4>{stats.resolved}</h4>
-                                    <small>Resueltos</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-md-2">
-                            <div className="card bg-secondary text-white">
-                                <div className="card-body text-center">
-                                    <h4>{stats.closed}</h4>
-                                    <small>Cerrados</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Filter Buttons */}
-                    <div className="mb-4">
-                        <div className="btn-group" role="group">
-                            <button
-                                className={`btn ${filter === 'all' ? 'btn-dark' : 'btn-outline-dark'}`}
-                                onClick={() => setFilter('all')}
-                            >
-                                Todos
-                            </button>
-                            {statusOptions.map(status => (
-                                <button
-                                    key={status.value}
-                                    className={`btn ${filter === status.value ? 'btn-dark' : 'btn-outline-dark'}`}
-                                    onClick={() => setFilter(status.value)}
-                                >
-                                    {status.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Tickets List */}
-            <div className="row">
-                {getFilteredTickets().map(ticket => (
-                    <div key={ticket.id} className="col-lg-6 col-xl-4 mb-4">
-                        <div className="card h-100">
-                            <div className="card-header d-flex justify-content-between align-items-center">
-                                <span className="fw-bold">#{ticket.id}</span>
-                                <div>
-                                    <span className={`badge ${getPriorityInfo(ticket.priority).className} me-2`}>
-                                        {getPriorityInfo(ticket.priority).label}
-                                    </span>
-                                    <span className={`badge ${getStatusInfo(ticket.status).className}`}>
-                                        {getStatusInfo(ticket.status).label}
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="card-body">
-                                <h5 className="card-title">{ticket.title}</h5>
-                                {ticket.description && (
-                                    <p className="card-text text-muted">
-                                        {ticket.description.length > 100
-                                            ? ticket.description.substring(0, 100) + "..."
-                                            : ticket.description
-                                        }
-                                    </p>
-                                )}
-                                {ticket.requester_name && (
-                                    <div className="mb-2">
-                                        <small className="text-muted">
-                                            <i className="fas fa-user me-1"></i>
-                                            {ticket.requester_name}
-                                        </small>
-                                    </div>
-                                )}
-                                {ticket.requester_email && (
-                                    <div className="mb-2">
-                                        <small className="text-muted">
-                                            <i className="fas fa-envelope me-1"></i>
-                                            {ticket.requester_email}
-                                        </small>
-                                    </div>
-                                )}
-                                <div className="mb-2">
-                                    <small className="text-muted">
-                                        <i className="fas fa-calendar me-1"></i>
-                                        Creado: {new Date(ticket.created_at).toLocaleDateString()}
-                                    </small>
-                                </div>
-                            </div>
-                            <div className="card-footer d-flex justify-content-between align-items-center">
-                                <div>
-                                    <AuthProtectedAction
-                                        loginButtonText="Editar"
-                                        loginButtonClass="btn btn-sm btn-outline-primary me-2"
-                                    >
-                                        <button
-                                            className="btn btn-sm btn-outline-primary me-2"
-                                            onClick={() => handleEditTicket(ticket)}
-                                        >
-                                            <i className="fas fa-edit me-1"></i>Editar
+        <ProtectedRoute requireAuth={true}>
+            <div className="container-fluid mt-4">
+                <div className="row mb-4">
+                    <div className="col-12">
+                        <div className="d-flex justify-content-between align-items-center mb-4">
+                            <h1 className="h2">Sistema de Tickets</h1>
+                            <div className="d-flex gap-2">
+                                {isAuthenticated && (
+                                    <div className="btn-group me-2">
+                                        <button type="button" className="btn btn-outline-success dropdown-toggle" data-bs-toggle="dropdown">
+                                            <i className="fas fa-download me-1"></i>Exportar
                                         </button>
-                                    </AuthProtectedAction>
-
-                                    <AuthProtectedAction
-                                        loginButtonText="Eliminar"
-                                        loginButtonClass="btn btn-sm btn-outline-danger"
-                                    >
-                                        <button
-                                            className="btn btn-sm btn-outline-danger"
-                                            onClick={() => handleDeleteTicket(ticket.id)}
-                                        >
-                                            <i className="fas fa-trash me-1"></i>Eliminar
-                                        </button>
-                                    </AuthProtectedAction>
-                                </div>
-
-                                {!isAuthenticated && (
-                                    <small className="text-muted">
-                                        <i className="fas fa-info-circle me-1"></i>
-                                        Se requiere acceso admin para editar/eliminar
-                                    </small>
+                                        <ul className="dropdown-menu">
+                                            <li>
+                                                <button className="dropdown-item" onClick={handleExportPDF}>
+                                                    <i className="fas fa-file-pdf me-2 text-danger"></i>Exportar PDF
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button className="dropdown-item" onClick={handleExportExcel}>
+                                                    <i className="fas fa-file-excel me-2 text-success"></i>Exportar Excel
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </div>
                                 )}
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {getFilteredTickets().length === 0 && (
-                <div className="text-center py-5">
-                    <i className="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
-                    <h4 className="text-muted">No hay tickets {filter !== 'all' ? getStatusInfo(filter).label.toLowerCase() : ''}</h4>
-                    <p className="text-muted">Crea un nuevo ticket para comenzar</p>
-                </div>
-            )}
-
-            {/* Ticket Modal */}
-            {showTicketModal && (
-                <div className="modal show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-                    <div className="modal-dialog modal-lg">
-                        <div className="modal-content">
-                            <div className="modal-header">
-                                <h5 className="modal-title">
-                                    {editingTicket ? "Editar Ticket" : "Nuevo Ticket"}
-                                </h5>
                                 <button
-                                    type="button"
-                                    className="btn-close"
-                                    onClick={() => {
-                                        setShowTicketModal(false);
-                                        setEditingTicket(null);
-                                        setNewTicket({
-                                            title: "",
-                                            description: "",
-                                            status: "open",
-                                            priority: "medium",
-                                            requester_name: "",
-                                            requester_email: ""
-                                        });
-                                    }}
-                                ></button>
-                            </div>
-                            <div className="modal-body">
-                                <form>
-                                    <div className="mb-3">
-                                        <label className="form-label">Título *</label>
-                                        <input
-                                            type="text"
-                                            className="form-control"
-                                            value={newTicket.title}
-                                            onChange={(e) => setNewTicket({ ...newTicket, title: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="mb-3">
-                                        <label className="form-label">Descripción</label>
-                                        <textarea
-                                            className="form-control"
-                                            rows="4"
-                                            value={newTicket.description}
-                                            onChange={(e) => setNewTicket({ ...newTicket, description: e.target.value })}
-                                        ></textarea>
-                                    </div>
-                                    <div className="row">
-                                        <div className="col-md-6">
-                                            <div className="mb-3">
-                                                <label className="form-label">Estado</label>
-                                                <select
-                                                    className="form-select"
-                                                    value={newTicket.status}
-                                                    onChange={(e) => setNewTicket({ ...newTicket, status: e.target.value })}
-                                                >
-                                                    {statusOptions.map(option => (
-                                                        <option key={option.value} value={option.value}>
-                                                            {option.label}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div className="col-md-6">
-                                            <div className="mb-3">
-                                                <label className="form-label">Prioridad</label>
-                                                <select
-                                                    className="form-select"
-                                                    value={newTicket.priority}
-                                                    onChange={(e) => setNewTicket({ ...newTicket, priority: e.target.value })}
-                                                >
-                                                    {priorityOptions.map(option => (
-                                                        <option key={option.value} value={option.value}>
-                                                            {option.label}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="row">
-                                        <div className="col-md-6">
-                                            <div className="mb-3">
-                                                <label className="form-label">Nombre del solicitante</label>
-                                                <input
-                                                    type="text"
-                                                    className="form-control"
-                                                    value={newTicket.requester_name}
-                                                    onChange={(e) => setNewTicket({ ...newTicket, requester_name: e.target.value })}
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="col-md-6">
-                                            <div className="mb-3">
-                                                <label className="form-label">Email del solicitante</label>
-                                                <input
-                                                    type="email"
-                                                    className="form-control"
-                                                    value={newTicket.requester_email}
-                                                    onChange={(e) => setNewTicket({ ...newTicket, requester_email: e.target.value })}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                            <div className="modal-footer">
-                                <button
-                                    type="button"
-                                    className="btn btn-secondary"
-                                    onClick={() => {
-                                        setShowTicketModal(false);
-                                        setEditingTicket(null);
-                                        setNewTicket({
-                                            title: "",
-                                            description: "",
-                                            status: "open",
-                                            priority: "medium",
-                                            requester_name: "",
-                                            requester_email: ""
-                                        });
-                                    }}
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="button"
                                     className="btn btn-primary"
-                                    onClick={handleSaveTicket}
-                                    disabled={!newTicket.title}
+                                    onClick={() => setShowTicketModal(true)}
                                 >
-                                    {editingTicket ? "Actualizar" : "Crear"} Ticket
+                                    <i className="fas fa-plus me-2"></i>Nuevo Ticket
                                 </button>
+                            </div>
+                        </div>
+
+                        {/* Stats Cards */}
+                        <div className="row mb-4">
+                            <div className="col-md-2">
+                                <div className="card bg-info text-white">
+                                    <div className="card-body text-center">
+                                        <h4>{stats.total}</h4>
+                                        <small>Total</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="col-md-2">
+                                <div className="card bg-primary text-white">
+                                    <div className="card-body text-center">
+                                        <h4>{stats.open}</h4>
+                                        <small>Abiertos</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="col-md-2">
+                                <div className="card bg-warning text-white">
+                                    <div className="card-body text-center">
+                                        <h4>{stats.inProgress}</h4>
+                                        <small>En Progreso</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="col-md-2">
+                                <div className="card bg-success text-white">
+                                    <div className="card-body text-center">
+                                        <h4>{stats.resolved}</h4>
+                                        <small>Resueltos</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="col-md-2">
+                                <div className="card bg-secondary text-white">
+                                    <div className="card-body text-center">
+                                        <h4>{stats.closed}</h4>
+                                        <small>Cerrados</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Filter Buttons */}
+                        <div className="mb-4">
+                            <div className="btn-group" role="group">
+                                <button
+                                    className={`btn ${filter === 'all' ? 'btn-dark' : 'btn-outline-dark'}`}
+                                    onClick={() => setFilter('all')}
+                                >
+                                    Todos
+                                </button>
+                                {statusOptions.map(status => (
+                                    <button
+                                        key={status.value}
+                                        className={`btn ${filter === status.value ? 'btn-dark' : 'btn-outline-dark'}`}
+                                        onClick={() => setFilter(status.value)}
+                                    >
+                                        {status.label}
+                                    </button>
+                                ))}
                             </div>
                         </div>
                     </div>
                 </div>
-            )}
-        </div>
+
+                {/* Tickets List */}
+                <div className="row">
+                    {getFilteredTickets().map(ticket => (
+                        <div key={ticket.id} className="col-lg-6 col-xl-4 mb-4">
+                            <div className="card h-100">
+                                <div className="card-header d-flex justify-content-between align-items-center">
+                                    <span className="fw-bold">#{ticket.id}</span>
+                                    <div>
+                                        <span className={`badge ${getPriorityInfo(ticket.priority).className} me-2`}>
+                                            {getPriorityInfo(ticket.priority).label}
+                                        </span>
+                                        <span className={`badge ${getStatusInfo(ticket.status).className}`}>
+                                            {getStatusInfo(ticket.status).label}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="card-body">
+                                    <h5 className="card-title">{ticket.title}</h5>
+                                    {ticket.description && (
+                                        <p className="card-text text-muted">
+                                            {ticket.description.length > 100
+                                                ? ticket.description.substring(0, 100) + "..."
+                                                : ticket.description
+                                            }
+                                        </p>
+                                    )}
+                                    {ticket.requester_name && (
+                                        <div className="mb-2">
+                                            <small className="text-muted">
+                                                <i className="fas fa-user me-1"></i>
+                                                {ticket.requester_name}
+                                            </small>
+                                        </div>
+                                    )}
+                                    {ticket.requester_email && (
+                                        <div className="mb-2">
+                                            <small className="text-muted">
+                                                <i className="fas fa-envelope me-1"></i>
+                                                {ticket.requester_email}
+                                            </small>
+                                        </div>
+                                    )}
+                                    <div className="mb-2">
+                                        <small className="text-muted">
+                                            <i className="fas fa-calendar me-1"></i>
+                                            Creado: {new Date(ticket.created_at).toLocaleDateString()}
+                                        </small>
+                                    </div>
+                                </div>
+                                <div className="card-footer d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <AuthProtectedAction
+                                            loginButtonText="Editar"
+                                            loginButtonClass="btn btn-sm btn-outline-primary me-2"
+                                        >
+                                            <button
+                                                className="btn btn-sm btn-outline-primary me-2"
+                                                onClick={() => handleEditTicket(ticket)}
+                                            >
+                                                <i className="fas fa-edit me-1"></i>Editar
+                                            </button>
+                                        </AuthProtectedAction>
+
+                                        <AuthProtectedAction
+                                            loginButtonText="Eliminar"
+                                            loginButtonClass="btn btn-sm btn-outline-danger"
+                                        >
+                                            <button
+                                                className="btn btn-sm btn-outline-danger"
+                                                onClick={() => handleDeleteTicket(ticket.id)}
+                                            >
+                                                <i className="fas fa-trash me-1"></i>Eliminar
+                                            </button>
+                                        </AuthProtectedAction>
+                                    </div>
+
+                                    {!isAuthenticated && (
+                                        <small className="text-muted">
+                                            <i className="fas fa-info-circle me-1"></i>
+                                            Se requiere acceso admin para editar/eliminar
+                                        </small>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {getFilteredTickets().length === 0 && (
+                    <div className="text-center py-5">
+                        <i className="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
+                        <h4 className="text-muted">No hay tickets {filter !== 'all' ? getStatusInfo(filter).label.toLowerCase() : ''}</h4>
+                        <p className="text-muted">Crea un nuevo ticket para comenzar</p>
+                    </div>
+                )}
+
+                {/* Ticket Modal */}
+                {showTicketModal && (
+                    <div className="modal show d-block" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+                        <div className="modal-dialog modal-lg">
+                            <div className="modal-content">
+                                <div className="modal-header">
+                                    <h5 className="modal-title">
+                                        {editingTicket ? "Editar Ticket" : "Nuevo Ticket"}
+                                    </h5>
+                                    <button
+                                        type="button"
+                                        className="btn-close"
+                                        onClick={() => {
+                                            setShowTicketModal(false);
+                                            setEditingTicket(null);
+                                            setNewTicket({
+                                                title: "",
+                                                description: "",
+                                                status: "open",
+                                                priority: "medium",
+                                                requester_name: "",
+                                                requester_email: ""
+                                            });
+                                        }}
+                                    ></button>
+                                </div>
+                                <div className="modal-body">
+                                    <form>
+                                        <div className="mb-3">
+                                            <label className="form-label">Título *</label>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                value={newTicket.title}
+                                                onChange={(e) => setNewTicket({ ...newTicket, title: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="mb-3">
+                                            <label className="form-label">Descripción</label>
+                                            <textarea
+                                                className="form-control"
+                                                rows="4"
+                                                value={newTicket.description}
+                                                onChange={(e) => setNewTicket({ ...newTicket, description: e.target.value })}
+                                            ></textarea>
+                                        </div>
+                                        <div className="row">
+                                            <div className="col-md-6">
+                                                <div className="mb-3">
+                                                    <label className="form-label">Estado</label>
+                                                    <select
+                                                        className="form-select"
+                                                        value={newTicket.status}
+                                                        onChange={(e) => setNewTicket({ ...newTicket, status: e.target.value })}
+                                                    >
+                                                        {statusOptions.map(option => (
+                                                            <option key={option.value} value={option.value}>
+                                                                {option.label}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div className="col-md-6">
+                                                <div className="mb-3">
+                                                    <label className="form-label">Prioridad</label>
+                                                    <select
+                                                        className="form-select"
+                                                        value={newTicket.priority}
+                                                        onChange={(e) => setNewTicket({ ...newTicket, priority: e.target.value })}
+                                                    >
+                                                        {priorityOptions.map(option => (
+                                                            <option key={option.value} value={option.value}>
+                                                                {option.label}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="row">
+                                            <div className="col-md-6">
+                                                <div className="mb-3">
+                                                    <label className="form-label">Nombre del solicitante</label>
+                                                    <input
+                                                        type="text"
+                                                        className="form-control"
+                                                        value={newTicket.requester_name}
+                                                        onChange={(e) => setNewTicket({ ...newTicket, requester_name: e.target.value })}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="col-md-6">
+                                                <div className="mb-3">
+                                                    <label className="form-label">Email del solicitante</label>
+                                                    <input
+                                                        type="email"
+                                                        className="form-control"
+                                                        value={newTicket.requester_email}
+                                                        onChange={(e) => setNewTicket({ ...newTicket, requester_email: e.target.value })}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div className="modal-footer">
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary"
+                                        onClick={() => {
+                                            setShowTicketModal(false);
+                                            setEditingTicket(null);
+                                            setNewTicket({
+                                                title: "",
+                                                description: "",
+                                                status: "open",
+                                                priority: "medium",
+                                                requester_name: "",
+                                                requester_email: ""
+                                            });
+                                        }}
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-primary"
+                                        onClick={handleSaveTicket}
+                                        disabled={!newTicket.title}
+                                    >
+                                        {editingTicket ? "Actualizar" : "Crear"} Ticket
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </ProtectedRoute>
     );
 };
