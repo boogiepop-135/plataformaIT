@@ -713,113 +713,7 @@ def admin_logout():
     return jsonify({"message": "Logged out successfully"}), 200
 
 
-# USER MANAGEMENT ROUTES
-
-@api.route('/users', methods=['GET'])
-@admin_required
-def get_users():
-    """Get all users (admin only)"""
-    try:
-        users = User.query.all()
-        return jsonify([user.serialize() for user in users]), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@api.route('/users', methods=['POST'])
-@admin_required
-def create_user():
-    """Create a new user (admin only)"""
-    try:
-        data = request.get_json()
-
-        # Validate required fields
-        if not data.get('email'):
-            return jsonify({"error": "Email is required"}), 400
-        if not data.get('password'):
-            return jsonify({"error": "Password is required"}), 400
-        if not data.get('name'):
-            return jsonify({"error": "Name is required"}), 400
-
-        # Check if email already exists
-        existing_user = User.query.filter_by(email=data.get('email')).first()
-        if existing_user:
-            return jsonify({"error": "Email already exists"}), 400
-
-        # Validate role
-        role = data.get('role', 'viewer')
-        if role not in ['admin', 'user', 'viewer']:
-            return jsonify({"error": "Invalid role. Must be: admin, user, or viewer"}), 400
-
-        new_user = User(
-            email=data.get('email'),
-            password=data.get('password'),  # In production, hash this!
-            name=data.get('name'),
-            role=role,
-            is_active=data.get('is_active', True),
-            created_by=1  # Assuming admin has ID 1
-        )
-
-        db.session.add(new_user)
-        db.session.commit()
-
-        return jsonify(new_user.serialize()), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": str(e)}), 500
-
-
-@api.route('/users/<int:user_id>', methods=['PUT'])
-@admin_required
-def update_user(user_id):
-    """Update user (admin only)"""
-    try:
-        user = User.query.get_or_404(user_id)
-        data = request.get_json()
-
-        if 'name' in data:
-            user.name = data['name']
-        if 'email' in data:
-            # Check if new email already exists
-            if data['email'] != user.email:
-                existing_user = User.query.filter_by(
-                    email=data['email']).first()
-                if existing_user:
-                    return jsonify({"error": "Email already exists"}), 400
-            user.email = data['email']
-        if 'role' in data:
-            if data['role'] not in ['admin', 'user', 'viewer']:
-                return jsonify({"error": "Invalid role"}), 400
-            user.role = data['role']
-        if 'is_active' in data:
-            user.is_active = data['is_active']
-        if 'password' in data and data['password']:
-            user.password = data['password']  # In production, hash this!
-
-        db.session.commit()
-        return jsonify(user.serialize()), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": str(e)}), 500
-
-
-@api.route('/users/<int:user_id>', methods=['DELETE'])
-@admin_required
-def delete_user(user_id):
-    """Delete user (admin only)"""
-    try:
-        user = User.query.get_or_404(user_id)
-
-        # Prevent deletion of admin user (assuming ID 1)
-        if user_id == 1:
-            return jsonify({"error": "Cannot delete main admin user"}), 400
-
-        db.session.delete(user)
-        db.session.commit()
-        return jsonify({"message": "User deleted successfully"}), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+# USER MANAGEMENT ROUTES (keeping the enhanced versions)
 
 
 @api.route('/users/<int:user_id>/toggle-status', methods=['PUT'])
@@ -867,14 +761,12 @@ def change_admin_password():
         admin_user = User.query.filter_by(id=user_id, role='admin').first()
 
         if admin_user:
-            # Verify current password
-            if admin_user.password != current_password:
-                # Try fallback hardcoded password
-                if current_password != "admin123":
-                    return jsonify({"error": "Current password is incorrect"}), 400
+            # Verify current password using hash verification
+            if not admin_user.check_password(current_password):
+                return jsonify({"error": "Current password is incorrect"}), 400
 
-            # Update password in database
-            admin_user.password = new_password
+            # Update password using hash
+            admin_user.set_password(new_password)
             db.session.commit()
 
             return jsonify({
@@ -887,12 +779,12 @@ def change_admin_password():
             # Create admin user with new password
             new_admin = User(
                 email="admin",
-                password=new_password,
                 name="Administrator",
                 role="admin",
                 is_active=True,
                 created_by=1
             )
+            new_admin.set_password(new_password)
             db.session.add(new_admin)
             db.session.commit()
 
@@ -1410,7 +1302,8 @@ def save_settings():
         return jsonify({"error": str(e)}), 500
 
 
-# USERS CRUD ROUTES
+# USER MANAGEMENT ROUTES
+
 @api.route('/users', methods=['GET'])
 @admin_required
 def get_users():
@@ -1428,17 +1321,17 @@ def create_user():
     """Create new user - admin only"""
     try:
         data = request.get_json()
-        
+
         # Validate required fields
         if not data.get('email') or not data.get('password'):
             return jsonify({"error": "Email y contraseña son requeridos"}), 400
-        
+
         # Check if email already exists
         existing_user = User.query.filter_by(email=data['email']).first()
         if existing_user:
             return jsonify({"error": "El email ya está en uso"}), 400
-        
-        # Create new user
+
+        # Create new user with password hashing
         user = User(
             email=data['email'],
             name=data.get('name', ''),
@@ -1446,10 +1339,10 @@ def create_user():
             is_active=data.get('is_active', True)
         )
         user.set_password(data['password'])
-        
+
         db.session.add(user)
         db.session.commit()
-        
+
         return jsonify({
             "message": "Usuario creado exitosamente",
             "user": user.serialize()
@@ -1466,7 +1359,7 @@ def update_user(user_id):
     try:
         user = User.query.get_or_404(user_id)
         data = request.get_json()
-        
+
         # Update fields
         if 'name' in data:
             user.name = data['name']
@@ -1482,9 +1375,9 @@ def update_user(user_id):
             user.is_active = data['is_active']
         if 'password' in data and data['password']:
             user.set_password(data['password'])
-        
+
         db.session.commit()
-        
+
         return jsonify({
             "message": "Usuario actualizado exitosamente",
             "user": user.serialize()
@@ -1500,13 +1393,14 @@ def delete_user(user_id):
     """Delete user - admin only"""
     try:
         user = User.query.get_or_404(user_id)
-        
-        # Don't allow deleting yourself
-        # Note: This would need to be enhanced to check current user ID
-        
+
+        # Prevent deletion of main admin user
+        if user_id == 1:
+            return jsonify({"error": "No se puede eliminar el usuario administrador principal"}), 400
+
         db.session.delete(user)
         db.session.commit()
-        
+
         return jsonify({"message": "Usuario eliminado exitosamente"}), 200
     except Exception as e:
         db.session.rollback()
@@ -1520,13 +1414,13 @@ def admin_change_user_password(user_id):
     try:
         user = User.query.get_or_404(user_id)
         data = request.get_json()
-        
+
         if not data.get('new_password'):
             return jsonify({"error": "Nueva contraseña requerida"}), 400
-        
+
         user.set_password(data['new_password'])
         db.session.commit()
-        
+
         return jsonify({"message": "Contraseña cambiada exitosamente"}), 200
     except Exception as e:
         db.session.rollback()
@@ -1541,15 +1435,15 @@ def change_own_password():
         # Note: This endpoint would need to be enhanced to identify the current user
         # For now, it's placeholder functionality
         data = request.get_json()
-        
+
         if not data.get('current_password') or not data.get('new_password'):
             return jsonify({"error": "Contraseña actual y nueva contraseña requeridas"}), 400
-        
+
         # In a real implementation, you would:
         # 1. Get current user from token
         # 2. Verify current password
         # 3. Set new password
-        
+
         return jsonify({"message": "Contraseña cambiada exitosamente"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
