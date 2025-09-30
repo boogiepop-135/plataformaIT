@@ -133,9 +133,9 @@ const BudgetModule = () => {
     ];
 
     const formatCurrency = (amount) => {
-        return '$' + amount.toLocaleString('es-MX', { 
-            minimumFractionDigits: 2, 
-            maximumFractionDigits: 2 
+        return '$' + amount.toLocaleString('es-MX', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
         });
     };
 
@@ -145,7 +145,7 @@ const BudgetModule = () => {
         const impuestos = ventasBase * 0.10;
         const gastosOperativos = ventasBase * 0.414;
         const utilidad = ventasBase - costos - impuestos - gastosOperativos;
-        
+
         return {
             ventas: ventasBase,
             costos,
@@ -182,7 +182,7 @@ const BudgetModule = () => {
             padding: '20px'
         }}>
             {/* Botón de imprimir */}
-            <button 
+            <button
                 onClick={printReport}
                 className="fixed bottom-8 right-8 bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-3 rounded-full font-semibold shadow-lg transition-all duration-300 hover:scale-105 z-50"
             >
@@ -207,11 +207,10 @@ const BudgetModule = () => {
                             <button
                                 key={periodo}
                                 onClick={() => setSelectedPeriod(periodo)}
-                                className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
-                                    selectedPeriod === periodo
+                                className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${selectedPeriod === periodo
                                         ? 'bg-yellow-600 text-white shadow-lg scale-105'
                                         : 'bg-white text-yellow-600 border-2 border-yellow-600 hover:bg-yellow-600 hover:text-white hover:scale-105'
-                                }`}
+                                    }`}
                             >
                                 {periodo.charAt(0).toUpperCase() + periodo.slice(1)}
                             </button>
@@ -258,15 +257,15 @@ const BudgetModule = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                     {areasPresupuesto.map((area, index) => {
                         const monto = summaryData.ventas * (area.porcentaje / 100);
-                        
+
                         return (
                             <div key={index} className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                                 <div className="flex items-center gap-4 mb-4">
-                                    <div 
+                                    <div
                                         className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
-                                        style={{ 
+                                        style={{
                                             backgroundColor: area.color + '20',
-                                            color: area.color 
+                                            color: area.color
                                         }}
                                     >
                                         {area.icon}
@@ -278,17 +277,17 @@ const BudgetModule = () => {
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div className="text-3xl font-bold text-gray-800 mb-2">
                                     {formatCurrency(monto)}
                                 </div>
-                                
+
                                 <div className="inline-block bg-gray-100 px-3 py-1 rounded-full text-sm font-semibold text-gray-700 mb-3">
                                     {area.porcentaje}% sobre ventas
                                 </div>
-                                
+
                                 <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
-                                    <div 
+                                    <div
                                         className="h-2 rounded-full transition-all duration-500"
                                         style={{
                                             width: `${Math.min(area.porcentaje * 1.5, 100)}%`,
@@ -296,7 +295,7 @@ const BudgetModule = () => {
                                         }}
                                     ></div>
                                 </div>
-                                
+
                                 <p className="text-sm text-gray-600">{area.descripcion}</p>
                             </div>
                         );
@@ -308,7 +307,7 @@ const BudgetModule = () => {
                     <h2 className="text-2xl font-bold text-gray-800 mb-6">
                         📊 Comparativo Presupuestal Mensual (Escenario Base)
                     </h2>
-                    
+
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead>
@@ -331,7 +330,7 @@ const BudgetModule = () => {
                                     const noviembre = ventasPorMes.noviembre * (area.porcentaje / 100);
                                     const diciembre = ventasPorMes.diciembre * (area.porcentaje / 100);
                                     const total = agosto + septiembre + octubre + noviembre + diciembre;
-                                    
+
                                     return (
                                         <tr key={index} className="hover:bg-gray-50 transition-colors">
                                             <td className="p-4 border-b border-gray-200">
@@ -351,7 +350,7 @@ const BudgetModule = () => {
                                         </tr>
                                     );
                                 })}
-                                
+
                                 {/* Total row */}
                                 <tr className="bg-green-50 font-bold">
                                     <td className="p-4 border-b border-gray-200">

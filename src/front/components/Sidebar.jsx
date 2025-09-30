@@ -94,7 +94,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
     return (
         <>
             {/* Ultra-Modern Sidebar */}
-            <div className={`fixed left-0 top-0 h-full bg-white/80 backdrop-blur-2xl shadow-2xl border-r border-gray-200/50 transition-all duration-300 ease-in-out z-40 ${isCollapsed ? 'w-16' : 'w-64'
+            <div className={`fixed left-0 top-0 h-full bg-white/90 backdrop-blur-2xl shadow-2xl border-r border-gray-200/50 transition-all duration-300 ease-in-out z-50 ${isCollapsed ? 'w-16' : 'w-64'
                 }`}>
 
                 {/* Modern Logo Section - Compacto */}
@@ -345,7 +345,7 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
             {/* Overlay for mobile when sidebar is open */}
             {!isCollapsed && (
                 <div
-                    className={`fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden`}
+                    className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden`}
                     onClick={() => setIsCollapsed(true)}
                 ></div>
             )}

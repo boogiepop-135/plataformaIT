@@ -66,7 +66,7 @@ def get_current_user():
             }
     except:
         pass
-    
+
     # Fallback si no se encuentra en la DB
     return {"id": 1, "role": "super_admin", "name": "Super Admin User", "email": "admin"}
 
@@ -90,15 +90,15 @@ def role_required(allowed_roles):
             user = get_current_user()
             if not user:
                 return jsonify({"error": "Authentication required"}), 401
-            
+
             if isinstance(allowed_roles, str):
                 allowed_roles_list = [allowed_roles]
             else:
                 allowed_roles_list = allowed_roles
-            
+
             if user['role'] not in allowed_roles_list:
                 return jsonify({"error": "Insufficient permissions"}), 403
-            
+
             return f(*args, **kwargs)
         return decorated_function
     return decorator
@@ -111,10 +111,10 @@ def super_admin_required(f):
         user = get_current_user()
         if not user:
             return jsonify({"error": "Authentication required"}), 401
-        
+
         if user['role'] != 'super_admin':
             return jsonify({"error": "Super admin access required"}), 403
-        
+
         return f(*args, **kwargs)
     return decorated_function
 
@@ -126,10 +126,10 @@ def admin_or_super_required(f):
         user = get_current_user()
         if not user:
             return jsonify({"error": "Authentication required"}), 401
-        
+
         if user['role'] not in ['super_admin', 'admin-rh-financiero']:
             return jsonify({"error": "Admin access required"}), 403
-        
+
         return f(*args, **kwargs)
     return decorated_function
 
@@ -920,17 +920,29 @@ def verify_admin():
         token = data.get('token')
 
         if token == "admin_authenticated":
-            # In a real implementation, you would decode the token to get user info
-            # For now, return a basic response
-            return jsonify({
-                "valid": True,
-                "user": {
-                    "id": 1,
-                    "email": "admin",
-                    "name": "Administrator",
-                    "role": "admin"
-                }
-            }), 200
+            # Intentar obtener el usuario real de la base de datos
+            user = User.query.filter_by(email="admin").first()
+            if user:
+                return jsonify({
+                    "valid": True,
+                    "user": {
+                        "id": user.id,
+                        "email": user.email,
+                        "name": user.name,
+                        "role": user.role
+                    }
+                }), 200
+            else:
+                # Fallback para super admin
+                return jsonify({
+                    "valid": True,
+                    "user": {
+                        "id": 1,
+                        "email": "admin",
+                        "name": "Super Administrator",
+                        "role": "super_admin"
+                    }
+                }), 200
         else:
             return jsonify({"valid": False}), 401
 
@@ -2280,7 +2292,7 @@ def get_budget_data():
         current_user = get_current_user()
         if not current_user:
             return jsonify({"error": "Usuario no autenticado"}), 401
-        
+
         # Return basic budget configuration
         budget_config = {
             "ventas_por_mes": {
@@ -2317,8 +2329,8 @@ def get_budget_data():
                 "can_view": current_user['role'] in ['super_admin', 'admin-rh-financiero']
             }
         }
-        
+
         return jsonify(budget_config), 200
-        
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500

@@ -1,35 +1,46 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import BACKEND_URL from '../config/backend.js';
 
 const HRManagement = () => {
-    const { auth } = useAuth();
+    const { user, getAuthHeaders } = useAuth();
     const [users, setUsers] = useState([]);
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
-        role: 'user',
+        role: 'usuario',
         password: ''
     });
 
     useEffect(() => {
-        fetchUsers();
-    }, []);
+        if (user && ['admin-rh-financiero', 'super_admin'].includes(user.role)) {
+            fetchUsers();
+        } else {
+            setLoading(false);
+        }
+    }, [user]);
 
     const fetchUsers = async () => {
         try {
-            const response = await fetch('/api/users', {
-                headers: {
-                    'Authorization': `Bearer ${auth.token}`
-                }
+            setError(null);
+            const response = await fetch(`${BACKEND_URL}/api/users`, {
+                headers: getAuthHeaders()
             });
-            const data = await response.json();
+
             if (response.ok) {
-                setUsers(data.users || []);
+                const data = await response.json();
+                console.log('Users data:', data);
+                setUsers(Array.isArray(data) ? data : []);
+            } else {
+                const errorData = await response.json();
+                setError(errorData.error || 'Error al cargar usuarios');
             }
         } catch (error) {
             console.error('Error fetching users:', error);
+            setError('Error de conexión al servidor');
         } finally {
             setLoading(false);
         }
@@ -43,22 +54,23 @@ const HRManagement = () => {
             return;
         }
 
+        if (!formData.password) {
+            formData.password = generateRandomPassword();
+        }
+
         try {
-            const response = await fetch('/api/hr/users/create-request', {
+            const response = await fetch(`${BACKEND_URL}/api/users`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${auth.token}`
-                },
+                headers: getAuthHeaders(),
                 body: JSON.stringify(formData)
             });
 
             const data = await response.json();
 
             if (response.ok) {
-                alert(`Usuario creado exitosamente. Contraseña temporal: ${data.temporary_password}`);
+                alert(`Usuario creado exitosamente.`);
                 setShowCreateForm(false);
-                setFormData({ name: '', email: '', role: 'user', password: '' });
+                setFormData({ name: '', email: '', role: 'usuario', password: '' });
                 fetchUsers();
             } else {
                 alert(data.error || 'Error al crear usuario');
@@ -69,32 +81,24 @@ const HRManagement = () => {
         }
     };
 
-    const handleSuspendUser = async (userId, reason = '') => {
-        if (!reason.trim()) {
-            reason = prompt('Razón de la suspensión:');
-            if (!reason) return;
-        }
+    const generateRandomPassword = () => {
+        return Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+    };
 
+    const handleToggleUserStatus = async (userId, isActive) => {
         try {
-            const response = await fetch('/api/hr/users/suspend', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${auth.token}`
-                },
-                body: JSON.stringify({
-                    user_id: userId,
-                    reason: reason
-                })
+            const response = await fetch(`${BACKEND_URL}/api/users/${userId}/toggle-status`, {
+                method: 'PUT',
+                headers: getAuthHeaders()
             });
 
             const data = await response.json();
 
             if (response.ok) {
-                alert('Usuario suspendido exitosamente. Se ha notificado al super administrador.');
+                alert(data.message);
                 fetchUsers();
             } else {
-                alert(data.error || 'Error al suspender usuario');
+                alert(data.error || 'Error al cambiar estado del usuario');
             }
         } catch (error) {
             console.error('Error:', error);
@@ -108,11 +112,9 @@ const HRManagement = () => {
         }
 
         try {
-            const response = await fetch(`/api/superadmin/users/${userId}/delete`, {
+            const response = await fetch(`${BACKEND_URL}/api/users/${userId}`, {
                 method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${auth.token}`
-                }
+                headers: getAuthHeaders()
             });
 
             const data = await response.json();
@@ -129,22 +131,21 @@ const HRManagement = () => {
         }
     };
 
-    const handleUnsuspendUser = async (userId) => {
+    const handleUpdateUser = async (userId, updateData) => {
         try {
-            const response = await fetch(`/api/superadmin/users/${userId}/unsuspend`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${auth.token}`
-                }
+            const response = await fetch(`${BACKEND_URL}/api/users/${userId}`, {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify(updateData)
             });
 
             const data = await response.json();
 
             if (response.ok) {
-                alert('Usuario reactivado exitosamente');
+                alert('Usuario actualizado exitosamente');
                 fetchUsers();
             } else {
-                alert(data.error || 'Error al reactivar usuario');
+                alert(data.error || 'Error al actualizar usuario');
             }
         } catch (error) {
             console.error('Error:', error);
@@ -152,11 +153,11 @@ const HRManagement = () => {
         }
     };
 
-    if (!auth.user || !['hr', 'super_admin'].includes(auth.user.role)) {
+    if (!user || !['admin-rh-financiero', 'super_admin'].includes(user.role)) {
         return (
             <div className="container mx-auto px-4 py-8">
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                    No tienes permisos para acceder a esta sección.
+                    No tienes permisos para acceder a esta sección. Se requiere rol de RH-Financiero o Super Admin.
                 </div>
             </div>
         );
@@ -165,7 +166,26 @@ const HRManagement = () => {
     if (loading) {
         return (
             <div className="container mx-auto px-4 py-8">
-                <div className="text-center">Cargando usuarios...</div>
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto mb-4"></div>
+                    Cargando usuarios...
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="container mx-auto px-4 py-8">
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                    <strong>Error:</strong> {error}
+                    <button
+                        onClick={fetchUsers}
+                        className="ml-4 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
+                    >
+                        Reintentar
+                    </button>
+                </div>
             </div>
         );
     }
@@ -174,9 +194,9 @@ const HRManagement = () => {
         <div className="container mx-auto px-4 py-8">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-gray-900">
-                    Gestión de Usuarios {auth.user.role === 'hr' ? '(RH)' : '(Super Admin)'}
+                    Gestión de Usuarios {user.role === 'admin-rh-financiero' ? '(RH-Financiero)' : '(Super Admin)'}
                 </h1>
-                {auth.user.role === 'hr' && (
+                {user.role === 'super_admin' && (
                     <button
                         onClick={() => setShowCreateForm(true)}
                         className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
@@ -225,8 +245,8 @@ const HRManagement = () => {
                                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option value="user">Usuario</option>
-                                    <option value="admin">Administrador</option>
+                                    <option value="usuario">Usuario</option>
+                                    <option value="admin-rh-financiero">Admin RH-Financiero</option>
                                 </select>
                             </div>
                             <div>
@@ -285,38 +305,34 @@ const HRManagement = () => {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {users.map((user) => (
-                                <tr key={user.id}>
+                            {users.map((user_item) => (
+                                <tr key={user_item.id}>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div>
                                             <div className="text-sm font-medium text-gray-900">
-                                                {user.name}
+                                                {user_item.name}
                                             </div>
                                             <div className="text-sm text-gray-500">
-                                                {user.email}
+                                                {user_item.email}
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user.role === 'super_admin' ? 'bg-purple-100 text-purple-800' :
-                                                user.role === 'admin' ? 'bg-blue-100 text-blue-800' :
-                                                    user.role === 'hr' ? 'bg-green-100 text-green-800' :
-                                                        'bg-gray-100 text-gray-800'
+                                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user_item.role === 'super_admin' ? 'bg-purple-100 text-purple-800' :
+                                            user_item.role === 'admin-rh-financiero' ? 'bg-blue-100 text-blue-800' :
+                                                'bg-gray-100 text-gray-800'
                                             }`}>
-                                            {user.role}
+                                            {user_item.role === 'super_admin' ? 'Super Admin' :
+                                                user_item.role === 'admin-rh-financiero' ? 'RH-Financiero' :
+                                                    'Usuario'}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        {user.is_suspended ? (
+                                        {!user_item.is_active ? (
                                             <div>
                                                 <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                                                    Suspendido
+                                                    Inactivo
                                                 </span>
-                                                {user.suspension_reason && (
-                                                    <div className="text-xs text-gray-500 mt-1">
-                                                        {user.suspension_reason}
-                                                    </div>
-                                                )}
                                             </div>
                                         ) : (
                                             <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
@@ -325,42 +341,24 @@ const HRManagement = () => {
                                         )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                        {user.role !== 'super_admin' && (
+                                        {user_item.role !== 'super_admin' && user.role === 'super_admin' && (
                                             <>
-                                                {auth.user.role === 'hr' && !user.is_suspended && (
-                                                    <button
-                                                        onClick={() => handleSuspendUser(user.id)}
-                                                        className="text-orange-600 hover:text-orange-900"
-                                                    >
-                                                        Suspender
-                                                    </button>
-                                                )}
-                                                {auth.user.role === 'super_admin' && (
-                                                    <>
-                                                        {user.is_suspended ? (
-                                                            <button
-                                                                onClick={() => handleUnsuspendUser(user.id)}
-                                                                className="text-green-600 hover:text-green-900"
-                                                            >
-                                                                Reactivar
-                                                            </button>
-                                                        ) : (
-                                                            <button
-                                                                onClick={() => handleSuspendUser(user.id)}
-                                                                className="text-orange-600 hover:text-orange-900"
-                                                            >
-                                                                Suspender
-                                                            </button>
-                                                        )}
-                                                        <button
-                                                            onClick={() => handleDeleteUser(user.id, user.name)}
-                                                            className="text-red-600 hover:text-red-900"
-                                                        >
-                                                            Eliminar
-                                                        </button>
-                                                    </>
-                                                )}
+                                                <button
+                                                    onClick={() => handleToggleUserStatus(user_item.id, user_item.is_active)}
+                                                    className={`${user_item.is_active ? 'text-orange-600 hover:text-orange-900' : 'text-green-600 hover:text-green-900'}`}
+                                                >
+                                                    {user_item.is_active ? 'Desactivar' : 'Activar'}
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteUser(user_item.id, user_item.name)}
+                                                    className="text-red-600 hover:text-red-900"
+                                                >
+                                                    Eliminar
+                                                </button>
                                             </>
+                                        )}
+                                        {user_item.role !== 'super_admin' && user.role === 'admin-rh-financiero' && (
+                                            <span className="text-gray-500 text-sm">Solo consulta</span>
                                         )}
                                     </td>
                                 </tr>
