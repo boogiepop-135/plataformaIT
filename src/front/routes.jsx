@@ -21,6 +21,7 @@ import PaymentReminders from "./pages/PaymentReminders";
 import ServiceOrders from "./pages/ServiceOrders";
 import HRManagement from "./components/HRManagement";
 import BudgetModule from "./pages/BudgetModule";
+import RolesBranchesManagement from "./pages/RolesBranchesManagement";
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
@@ -49,6 +50,7 @@ export const router = createBrowserRouter(
       <Route path="/payment-reminders" element={<PaymentReminders />} />
       <Route path="/service-orders" element={<ServiceOrders />} />
       <Route path="/budget" element={<BudgetModule />} />
+      <Route path="/roles-branches" element={<RolesBranchesManagement />} />
     </Route>
   )
 );

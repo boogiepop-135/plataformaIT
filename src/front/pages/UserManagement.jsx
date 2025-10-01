@@ -16,7 +16,7 @@ const UserManagement = () => {
     const [success, setSuccess] = useState('');
 
     useEffect(() => {
-        if (user && user.role === 'admin') fetchUsers();
+        if (user && ['super_admin', 'admin', 'rh'].includes(user.role)) fetchUsers();
     }, [user]);
 
     const fetchUsers = async () => {
@@ -132,15 +132,15 @@ const UserManagement = () => {
         }
     };
 
-    if (!user || user.role !== 'admin') {
+    if (!user || !['super_admin', 'admin', 'rh'].includes(user.role)) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
                 <div className="text-center max-w-md mx-auto p-8">
                     <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
                         <i className="fas fa-shield-alt text-white text-3xl"></i>
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-800 mb-4">Acceso solo para administradores</h2>
-                    <p className="text-gray-600 mb-6 leading-relaxed">Esta sección solo está disponible para usuarios con rol <b>admin</b>.</p>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-4">Acceso Restringido</h2>
+                    <p className="text-gray-600 mb-6 leading-relaxed">Esta sección está disponible para <b>super administradores</b>, <b>administradores</b> y <b>RH</b>.</p>
                 </div>
             </div>
         );
@@ -152,9 +152,11 @@ const UserManagement = () => {
                 <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
                     <div className="flex items-center justify-between mb-8">
                         <h2 className="text-2xl font-bold text-gray-800">Gestión de Usuarios</h2>
-                        <button onClick={handleCreate} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105">
-                            + Nuevo Usuario
-                        </button>
+                        {user.role === 'super_admin' && (
+                            <button onClick={handleCreate} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-2 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105">
+                                + Nuevo Usuario
+                            </button>
+                        )}
                     </div>
                     {error && <div className="text-red-600 mb-4">{error}</div>}
                     {success && <div className="text-green-600 mb-4">{success}</div>}
@@ -176,9 +178,25 @@ const UserManagement = () => {
                                         <td className="py-2 px-4">{u.email}</td>
                                         <td className="py-2 px-4">{u.role}</td>
                                         <td className="py-2 px-4 space-x-2">
-                                            <button onClick={() => handleEdit(u)} className="text-blue-600 hover:underline">Editar</button>
-                                            <button onClick={() => handlePasswordChange(u.id)} className="text-amber-600 hover:underline">Contraseña</button>
-                                            <button onClick={() => handleDelete(u.id)} className="text-red-600 hover:underline">Eliminar</button>
+                                            {user.role === 'super_admin' && (
+                                                <>
+                                                    <button onClick={() => handleEdit(u)} className="text-blue-600 hover:underline">Editar</button>
+                                                    <button onClick={() => handlePasswordChange(u.id)} className="text-amber-600 hover:underline">Contraseña</button>
+                                                    <button onClick={() => handleDelete(u.id)} className="text-red-600 hover:underline">Eliminar</button>
+                                                </>
+                                            )}
+                                            {user.role === 'admin' && (
+                                                <>
+                                                    <button onClick={() => handleEdit(u)} className="text-blue-600 hover:underline">Editar</button>
+                                                    <button onClick={() => handlePasswordChange(u.id)} className="text-amber-600 hover:underline">Contraseña</button>
+                                                </>
+                                            )}
+                                            {user.role === 'rh' && u.role === 'operativo' && (
+                                                <button onClick={() => handleEdit(u)} className="text-blue-600 hover:underline">Editar</button>
+                                            )}
+                                            {user.role === 'rh' && u.role !== 'operativo' && (
+                                                <span className="text-gray-400">Solo lectura</span>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
@@ -205,8 +223,14 @@ const UserManagement = () => {
                                         <label className="block text-sm font-semibold text-gray-700 mb-1">Rol</label>
                                         <select name="role" value={form.role} onChange={handleInput} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900">
                                             <option value="user">Usuario</option>
-                                            <option value="admin">Administrador</option>
-                                            <option value="super_admin">Super Administrador</option>
+                                            <option value="operativo">Personal Operativo</option>
+                                            {user.role === 'super_admin' && (
+                                                <>
+                                                    <option value="rh">Recursos Humanos</option>
+                                                    <option value="admin">Administrador</option>
+                                                    <option value="super_admin">Super Administrador</option>
+                                                </>
+                                            )}
                                         </select>
                                     </div>
                                     <div>

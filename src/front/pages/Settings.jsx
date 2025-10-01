@@ -67,15 +67,15 @@ const Settings = () => {
         }));
     };
 
-    if (!isAuthenticated || !user || user.role !== 'admin') {
+    if (!isAuthenticated || !user || !['super_admin', 'admin', 'rh'].includes(user.role)) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
                 <div className="text-center max-w-md mx-auto p-8">
                     <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
                         <i className="fas fa-shield-alt text-white text-3xl"></i>
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-800 mb-4">Acceso solo para administradores</h2>
-                    <p className="text-gray-600 mb-6 leading-relaxed">Esta sección solo está disponible para usuarios con rol <b>admin</b>.</p>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-4">Acceso Restringido</h2>
+                    <p className="text-gray-600 mb-6 leading-relaxed">Esta sección está disponible para <b>super administradores</b>, <b>administradores</b> y <b>RH</b>.</p>
                 </div>
             </div>
         );
@@ -259,34 +259,46 @@ const Settings = () => {
                             </div>
                         </div>
 
-                        {/* Save Button */}
-                        <div className="mt-8 flex justify-center">
-                            <button
-                                onClick={handleSave}
-                                disabled={loading}
-                                className={`px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center space-x-3 text-sm sm:text-base ${saved
-                                    ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'
-                                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
-                                    }`}
-                            >
-                                {loading ? (
-                                    <>
-                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                        <span>Guardando...</span>
-                                    </>
-                                ) : saved ? (
-                                    <>
-                                        <i className="fas fa-check"></i>
-                                        <span>¡Configuración Guardada!</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <i className="fas fa-save"></i>
-                                        <span>Guardar Configuración</span>
-                                    </>
-                                )}
-                            </button>
-                        </div>
+                        {/* Save Button - Solo para super_admin y admin */}
+                        {['super_admin', 'admin'].includes(user.role) && (
+                            <div className="mt-8 flex justify-center">
+                                <button
+                                    onClick={handleSave}
+                                    disabled={loading}
+                                    className={`px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-white transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center space-x-3 text-sm sm:text-base ${saved
+                                        ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'
+                                        : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
+                                        }`}
+                                >
+                                    {loading ? (
+                                        <>
+                                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                            <span>Guardando...</span>
+                                        </>
+                                    ) : saved ? (
+                                        <>
+                                            <i className="fas fa-check"></i>
+                                            <span>¡Configuración Guardada!</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <i className="fas fa-save"></i>
+                                            <span>Guardar Configuración</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Mensaje para RH */}
+                        {user.role === 'rh' && (
+                            <div className="mt-8 text-center">
+                                <div className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-lg">
+                                    <i className="fas fa-info-circle mr-2"></i>
+                                    <span>Como usuario RH, puedes visualizar la configuración pero no modificarla.</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

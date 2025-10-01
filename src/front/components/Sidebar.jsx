@@ -55,9 +55,10 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
             title: "Usuario",
             items: [
                 { path: "/profile", icon: "fas fa-user-circle", label: "Mi Perfil", requireAuth: true },
-                { path: "/users", icon: "fas fa-users-gear", label: "Usuarios", requireAuth: true, superAdminOnly: true },
-                { path: "/hr-management", icon: "fas fa-user-friends", label: "Gestión RH", requireAuth: true, hrOrSuperAdmin: true },
-                { path: "/settings", icon: "fas fa-gear", label: "Configuración", requireAuth: true, superAdminOnly: true },
+                { path: "/users", icon: "fas fa-users-gear", label: "Usuarios", requireAuth: true, adminOrHigher: true },
+                { path: "/hr-management", icon: "fas fa-user-friends", label: "Personal RH", requireAuth: true, hrOrHigher: true },
+                { path: "/roles-branches", icon: "fas fa-building", label: "Roles y Sucursales", requireAuth: true, superAdminOnly: true },
+                { path: "/settings", icon: "fas fa-gear", label: "Configuración", requireAuth: true, adminOrHigher: true },
             ]
         },
         {
@@ -78,10 +79,13 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
             if (item.superAdminOnly && (!user || user.role !== 'super_admin')) {
                 return false;
             }
-            if (item.hrOrSuperAdmin && (!user || !['admin-rh-financiero', 'super_admin'].includes(user.role))) {
+            if (item.adminOrHigher && (!user || !['admin', 'super_admin', 'rh'].includes(user.role))) {
                 return false;
             }
-            if (item.financieroOnly && (!user || !['admin-rh-financiero', 'super_admin'].includes(user.role))) {
+            if (item.hrOrHigher && (!user || !['rh', 'admin', 'super_admin'].includes(user.role))) {
+                return false;
+            }
+            if (item.financieroOnly && (!user || !['admin', 'super_admin', 'rh'].includes(user.role))) {
                 return false;
             }
             return true;

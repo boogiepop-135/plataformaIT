@@ -2,7 +2,7 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 from flask import Flask, request, jsonify, url_for, Blueprint, make_response
-from api.models import db, User, Task, Ticket, CalendarEvent, Matrix, JournalEntry, PaymentReminder, ServiceOrder, MatrixHistory, SystemNotification, SystemBackup
+from api.models import db, User, Task, Ticket, CalendarEvent, Matrix, JournalEntry, PaymentReminder, ServiceOrder, MatrixHistory, SystemNotification, SystemBackup, Branch, Role
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
 from datetime import datetime
@@ -2332,5 +2332,278 @@ def get_budget_data():
 
         return jsonify(budget_config), 200
 
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# =================== NUEVAS RUTAS PARA ROLES Y SUCURSALES ===================
+
+@api.route('/branches', methods=['GET'])
+@role_required(['super_admin', 'admin', 'rh'])
+def get_branches():
+    """Obtener todas las sucursales"""
+    try:
+        from api.models import Branch
+        branches = Branch.query.filter_by(is_active=True).all()
+        return jsonify([branch.serialize() for branch in branches]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/branches', methods=['POST'])
+@super_admin_required
+def create_branch():
+    """Crear nueva sucursal"""
+    try:
+        from api.models import Branch
+        data = request.get_json()
+        current_user = get_current_user()
+
+        # Verificar que el código no exista
+        existing = Branch.query.filter_by(code=data['code']).first()
+        if existing:
+            return jsonify({"error": "El código de sucursal ya existe"}), 400
+
+        branch = Branch(
+            name=data['name'],
+            code=data['code'],
+            location=data.get('location'),
+            created_by=current_user['id']
+        )
+
+        db.session.add(branch)
+        db.session.commit()
+
+        return jsonify(branch.serialize()), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/branches/<int:branch_id>', methods=['PUT'])
+@super_admin_required
+def update_branch(branch_id):
+    """Actualizar sucursal"""
+    try:
+        from api.models import Branch
+        branch = Branch.query.get_or_404(branch_id)
+        data = request.get_json()
+
+        branch.name = data.get('name', branch.name)
+        branch.code = data.get('code', branch.code)
+        branch.location = data.get('location', branch.location)
+
+        db.session.commit()
+        return jsonify(branch.serialize()), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/branches/<int:branch_id>', methods=['DELETE'])
+@super_admin_required
+def delete_branch(branch_id):
+    """Eliminar sucursal"""
+    try:
+        from api.models import Branch
+        branch = Branch.query.get_or_404(branch_id)
+
+        # Verificar que no tenga usuarios asignados
+        if branch.users:
+            return jsonify({"error": "No se puede eliminar una sucursal con usuarios asignados"}), 400
+
+        branch.is_active = False
+        db.session.commit()
+
+        return jsonify({"message": "Sucursal eliminada"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/roles', methods=['GET'])
+@role_required(['super_admin', 'admin', 'rh'])
+def get_roles():
+    """Obtener todos los roles"""
+    try:
+        from api.models import Role
+        roles = Role.query.filter_by(is_active=True).all()
+        return jsonify([role.serialize() for role in roles]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/roles', methods=['POST'])
+@super_admin_required
+def create_role():
+    """Crear nuevo rol"""
+    try:
+        from api.models import Role
+        data = request.get_json()
+        current_user = get_current_user()
+
+        # Verificar que el nombre no exista
+        existing = Role.query.filter_by(name=data['name']).first()
+        if existing:
+            return jsonify({"error": "El nombre de rol ya existe"}), 400
+
+        role = Role(
+            name=data['name'],
+            display_name=data['display_name'],
+            description=data.get('description'),
+            permissions=data.get('permissions', {}),
+            created_by=current_user['id']
+        )
+
+        db.session.add(role)
+        db.session.commit()
+
+        return jsonify(role.serialize()), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/roles/<int:role_id>', methods=['PUT'])
+@super_admin_required
+def update_role(role_id):
+    """Actualizar rol"""
+    try:
+        from api.models import Role
+        role = Role.query.get_or_404(role_id)
+        data = request.get_json()
+
+        role.name = data.get('name', role.name)
+        role.display_name = data.get('display_name', role.display_name)
+        role.description = data.get('description', role.description)
+        role.permissions = data.get('permissions', role.permissions)
+
+        db.session.commit()
+        return jsonify(role.serialize()), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/roles/<int:role_id>', methods=['DELETE'])
+@super_admin_required
+def delete_role(role_id):
+    """Eliminar rol"""
+    try:
+        from api.models import Role
+        role = Role.query.get_or_404(role_id)
+
+        # Verificar que no tenga usuarios asignados
+        if role.users:
+            return jsonify({"error": "No se puede eliminar un rol con usuarios asignados"}), 400
+
+        role.is_active = False
+        db.session.commit()
+
+        return jsonify({"message": "Rol eliminado"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/hr/employees', methods=['GET'])
+@role_required(['rh', 'admin', 'super_admin'])
+def get_hr_employees():
+    """Obtener empleados operativos para RH"""
+    try:
+        current_user = get_current_user()
+
+        # Si es RH, solo puede ver empleados de su sucursal
+        if current_user['role'] == 'rh':
+            # Obtener la sucursal del usuario RH
+            user_obj = User.query.get(current_user['id'])
+            if not user_obj or not user_obj.branch_id:
+                return jsonify({"error": "Usuario RH sin sucursal asignada"}), 400
+
+            employees = User.query.filter_by(
+                role='operativo',
+                branch_id=user_obj.branch_id,
+                is_active=True
+            ).all()
+        else:
+            # Admin y super_admin pueden ver todos
+            employees = User.query.filter_by(
+                role='operativo', is_active=True).all()
+
+        return jsonify([emp.serialize() for emp in employees]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/hr/employees', methods=['POST'])
+@role_required(['rh', 'super_admin'])
+def create_hr_employee():
+    """Crear nuevo empleado operativo"""
+    try:
+        data = request.get_json()
+        current_user = get_current_user()
+
+        # Verificar que el email no exista
+        existing = User.query.filter_by(email=data['email']).first()
+        if existing:
+            return jsonify({"error": "El email ya está registrado"}), 400
+
+        # Si es RH, asignar a su sucursal automáticamente
+        branch_id = data.get('branch_id')
+        if current_user['role'] == 'rh':
+            user_obj = User.query.get(current_user['id'])
+            branch_id = user_obj.branch_id if user_obj else None
+
+        from datetime import datetime
+
+        employee = User(
+            name=data['name'],
+            email=data['email'],
+            role='operativo',
+            employee_id=data.get('employee_id'),
+            department=data.get('department'),
+            position=data.get('position'),
+            phone=data.get('phone'),
+            hire_date=datetime.strptime(
+                data['hire_date'], '%Y-%m-%d') if data.get('hire_date') else None,
+            salary=float(data['salary']) if data.get(
+                'salary') and current_user['role'] == 'super_admin' else None,
+            branch_id=branch_id,
+            created_by=current_user['id']
+        )
+
+        # Establecer contraseña
+        password = data.get('password', 'temporal123')
+        employee.set_password(password)
+
+        db.session.add(employee)
+        db.session.commit()
+
+        return jsonify(employee.serialize()), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route('/users', methods=['GET'])
+@role_required(['super_admin', 'admin', 'rh'])
+def get_users_with_filter():
+    """Obtener usuarios con filtros"""
+    try:
+        current_user = get_current_user()
+        role_filter = request.args.get('role')
+
+        query = User.query.filter_by(is_active=True)
+
+        if role_filter:
+            query = query.filter_by(role=role_filter)
+
+        # Si es RH, solo puede ver operativos de su sucursal y otros RH
+        if current_user['role'] == 'rh':
+            user_obj = User.query.get(current_user['id'])
+            if user_obj and user_obj.branch_id:
+                query = query.filter(
+                    db.or_(
+                        db.and_(User.role == 'operativo',
+                                User.branch_id == user_obj.branch_id),
+                        User.role == 'rh'
+                    )
+                )
+
+        users = query.all()
+        return jsonify([user.serialize() for user in users]), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

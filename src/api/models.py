@@ -7,9 +7,65 @@ from werkzeug.security import generate_password_hash, check_password_hash
 db = SQLAlchemy()
 
 
+class Branch(db.Model):
+    __tablename__ = 'branches'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    code = db.Column(db.String(10), nullable=False, unique=True)
+    location = db.Column(db.String(255), nullable=True)
+    is_active = db.Column(db.Boolean(), nullable=False, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+
+    # Relación con usuarios (especificar foreign_keys para evitar ambigüedad)
+    users = db.relationship('User', backref='branch_obj', lazy=True, foreign_keys='User.branch_id')
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "code": self.code,
+            "location": self.location,
+            "is_active": self.is_active,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_by": self.created_by,
+            "users_count": len(self.users) if self.users else 0
+        }
+
+
+class Role(db.Model):
+    __tablename__ = 'roles'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False, unique=True)
+    display_name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    # JSON con permisos específicos
+    permissions = db.Column(JSON, nullable=True)
+    is_active = db.Column(db.Boolean(), nullable=False, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+
+    # Relación con usuarios (especificar foreign_keys para evitar ambigüedad)
+    users = db.relationship('User', backref='role_obj', lazy=True, foreign_keys='User.role_id')
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "display_name": self.display_name,
+            "description": self.description,
+            "permissions": self.permissions,
+            "is_active": self.is_active,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_by": self.created_by,
+            "users_count": len(self.users) if self.users else 0
+        }
+
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(255), nullable=False)  # Campo legacy para compatibilidad
     password_hash = db.Column(db.String(255), nullable=False)
     is_active = db.Column(db.Boolean(), nullable=False, default=True)
     is_suspended = db.Column(db.Boolean(), nullable=False, default=False)
@@ -18,15 +74,29 @@ class User(db.Model):
         db.Integer, db.ForeignKey('user.id'), nullable=True)
     suspended_at = db.Column(db.DateTime, nullable=True)
     name = db.Column(db.String(100), nullable=True)
-    # 'super_admin', 'admin-rh-financiero', 'usuario'
-    role = db.Column(db.String(50), nullable=False, default='usuario')
+    # Roles: 'super_admin', 'admin', 'rh', 'operativo', 'user'
+    role = db.Column(db.String(50), nullable=False, default='user')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime, nullable=True)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
 
+    # Relaciones con Branch y Role para funcionalidades avanzadas
+    branch_id = db.Column(db.Integer, db.ForeignKey(
+        'branches.id'), nullable=True)
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=True)
+
+    # Información adicional para RH
+    employee_id = db.Column(db.String(20), nullable=True, unique=True)
+    department = db.Column(db.String(100), nullable=True)
+    position = db.Column(db.String(100), nullable=True)
+    phone = db.Column(db.String(20), nullable=True)
+    hire_date = db.Column(db.DateTime, nullable=True)
+    salary = db.Column(db.Float, nullable=True)
+
     def set_password(self, password):
         """Set password hash from plain text password"""
         self.password_hash = generate_password_hash(password)
+        self.password = self.password_hash  # Mantener sincronizados por compatibilidad
 
     def check_password(self, password):
         """Check if provided password matches hash"""
@@ -46,6 +116,16 @@ class User(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "last_login": self.last_login.isoformat() if self.last_login else None,
             "created_by": self.created_by,
+            "branch_id": self.branch_id,
+            "role_id": self.role_id,
+            "employee_id": self.employee_id,
+            "department": self.department,
+            "position": self.position,
+            "phone": self.phone,
+            "hire_date": self.hire_date.isoformat() if self.hire_date else None,
+            "salary": self.salary,
+            "branch": self.branch_obj.serialize() if self.branch_obj else None,
+            "role_details": self.role_obj.serialize() if self.role_obj else None,
             # do not serialize the password hash, its a security breach
         }
 
