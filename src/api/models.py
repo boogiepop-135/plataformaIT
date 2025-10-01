@@ -66,7 +66,12 @@ class Role(db.Model):
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    # Campo principal para login
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    # Nombre completo requerido
+    full_name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), unique=True,
+                      nullable=True)  # Email opcional
     # Campo legacy para compatibilidad
     password = db.Column(db.String(255), nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
@@ -76,9 +81,10 @@ class User(db.Model):
     suspended_by = db.Column(
         db.Integer, db.ForeignKey('user.id'), nullable=True)
     suspended_at = db.Column(db.DateTime, nullable=True)
+    # Campo legacy, usar full_name
     name = db.Column(db.String(100), nullable=True)
-    # Roles: 'super_admin', 'admin', 'rh', 'operativo', 'user'
-    role = db.Column(db.String(50), nullable=False, default='user')
+    # Roles: 'super_admin', 'admin', 'admin_rh', 'admin_finanzas', 'usuario'
+    role = db.Column(db.String(50), nullable=False, default='usuario')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime, nullable=True)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
@@ -108,8 +114,10 @@ class User(db.Model):
     def serialize(self):
         return {
             "id": self.id,
+            "username": self.username,
+            "full_name": self.full_name,
             "email": self.email,
-            "name": self.name,
+            "name": self.name,  # Campo legacy para compatibilidad
             "role": self.role,
             "is_active": self.is_active,
             "is_suspended": self.is_suspended,

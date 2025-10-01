@@ -3,7 +3,7 @@ import { useAuth } from '../hooks/useAuth.jsx';
 import BACKEND_URL from '../config/backend.js';
 import { ProtectedRoute } from '../components/ProtectedRoute.jsx';
 
-const emptyUser = { name: '', email: '', role: 'usuario', password: '' };
+const emptyUser = { username: '', full_name: '', email: '', role: 'usuario', password: '' };
 
 const UserManagement = () => {
     const { user, getAuthHeaders } = useAuth();
@@ -50,7 +50,13 @@ const UserManagement = () => {
     };
 
     const handleEdit = (user) => {
-        setForm({ ...user, password: '' });
+        setForm({
+            username: user.username || '',
+            full_name: user.full_name || user.name || '',
+            email: user.email || '',
+            role: user.role,
+            password: ''
+        });
         setEditingUser(user.id);
         setShowForm(true);
         setSuccess('');
@@ -165,7 +171,8 @@ const UserManagement = () => {
                         <table className="min-w-full text-sm text-gray-700">
                             <thead>
                                 <tr className="bg-gradient-to-r from-blue-100 to-indigo-100">
-                                    <th className="py-2 px-4">Nombre</th>
+                                    <th className="py-2 px-4">Usuario</th>
+                                    <th className="py-2 px-4">Nombre Completo</th>
                                     <th className="py-2 px-4">Email</th>
                                     <th className="py-2 px-4">Rol</th>
                                     <th className="py-2 px-4">Acciones</th>
@@ -174,8 +181,9 @@ const UserManagement = () => {
                             <tbody>
                                 {users.map(u => (
                                     <tr key={u.id} className="border-b">
-                                        <td className="py-2 px-4">{u.name}</td>
-                                        <td className="py-2 px-4">{u.email}</td>
+                                        <td className="py-2 px-4">{u.username || u.email}</td>
+                                        <td className="py-2 px-4">{u.full_name || u.name}</td>
+                                        <td className="py-2 px-4">{u.email || 'No especificado'}</td>
                                         <td className="py-2 px-4">{u.role}</td>
                                         <td className="py-2 px-4 space-x-2">
                                             {user.role === 'super_admin' && (
@@ -206,12 +214,16 @@ const UserManagement = () => {
                                 <h3 className="text-xl font-bold mb-4 text-gray-800">{editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}</h3>
                                 <form onSubmit={handleSubmit} className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-1">Nombre</label>
-                                        <input type="text" name="name" value={form.name} onChange={handleInput} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900" required />
+                                        <label className="block text-sm font-semibold text-gray-700 mb-1">Nombre de Usuario</label>
+                                        <input type="text" name="username" value={form.username} onChange={handleInput} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900" required />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>
-                                        <input type="email" name="email" value={form.email} onChange={handleInput} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900" required />
+                                        <label className="block text-sm font-semibold text-gray-700 mb-1">Nombre Completo</label>
+                                        <input type="text" name="full_name" value={form.full_name} onChange={handleInput} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900" required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-1">Email (Opcional)</label>
+                                        <input type="email" name="email" value={form.email} onChange={handleInput} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-700 mb-1">Rol</label>

@@ -843,17 +843,17 @@ def get_matrix_templates():
 
 @api.route('/auth/login', methods=['POST'])
 def admin_login():
-    """Admin login endpoint"""
+    """Login endpoint con username"""
     try:
         data = request.get_json()
         username = data.get('username')
         password = data.get('password')
 
         if not username or not password:
-            return jsonify({"error": "Username and password required"}), 400
+            return jsonify({"error": "Nombre de usuario y contraseña requeridos"}), 400
 
-        # Check if user exists in database (admin or any role)
-        user = User.query.filter_by(email=username).first()
+        # Check if user exists in database by username
+        user = User.query.filter_by(username=username).first()
 
         if user and user.is_active:
             # Check password using hash
@@ -868,8 +868,10 @@ def admin_login():
                     "token": "admin_authenticated",
                     "user": {
                         "id": user.id,
+                        "username": user.username,
+                        "full_name": user.full_name,
                         "email": user.email,
-                        "name": user.name,
+                        "name": user.name,  # Campo legacy
                         "role": user.role
                     },
                     "expires_in": 3600
@@ -1571,13 +1573,20 @@ def create_user():
         data = request.get_json()
 
         # Validate required fields
-        if not data.get('email') or not data.get('password'):
-            return jsonify({"error": "Email y contraseña son requeridos"}), 400
+        if not data.get('username') or not data.get('password') or not data.get('full_name'):
+            return jsonify({"error": "Nombre de usuario, nombre completo y contraseña son requeridos"}), 400
 
-        # Check if email already exists
-        existing_user = User.query.filter_by(email=data['email']).first()
+        # Check if username already exists
+        existing_user = User.query.filter_by(username=data['username']).first()
         if existing_user:
-            return jsonify({"error": "El email ya está en uso"}), 400
+            return jsonify({"error": "El nombre de usuario ya está en uso"}), 400
+
+        # Check if email already exists (si se proporciona)
+        email = data.get('email')
+        if email:
+            existing_email = User.query.filter_by(email=email).first()
+            if existing_email:
+                return jsonify({"error": "El email ya está en uso"}), 400
 
         # Validate role - super admin can create any role except another super_admin
         valid_roles = ['admin', 'admin_rh', 'admin_finanzas', 'usuario']
@@ -1587,8 +1596,10 @@ def create_user():
 
         # Create new user with password hashing
         user = User(
-            email=data['email'],
-            name=data.get('name', ''),
+            username=data['username'],
+            full_name=data['full_name'],
+            email=email,
+            name=data.get('full_name', ''),  # Campo legacy
             role=role,
             is_active=data.get('is_active', True)
         )
