@@ -18,7 +18,8 @@ class Branch(db.Model):
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
 
     # Relación con usuarios (especificar foreign_keys para evitar ambigüedad)
-    users = db.relationship('User', backref='branch_obj', lazy=True, foreign_keys='User.branch_id')
+    users = db.relationship('User', backref='branch_obj',
+                            lazy=True, foreign_keys='User.branch_id')
 
     def serialize(self):
         return {
@@ -46,7 +47,8 @@ class Role(db.Model):
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
 
     # Relación con usuarios (especificar foreign_keys para evitar ambigüedad)
-    users = db.relationship('User', backref='role_obj', lazy=True, foreign_keys='User.role_id')
+    users = db.relationship('User', backref='role_obj',
+                            lazy=True, foreign_keys='User.role_id')
 
     def serialize(self):
         return {
@@ -65,7 +67,8 @@ class Role(db.Model):
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(255), nullable=False)  # Campo legacy para compatibilidad
+    # Campo legacy para compatibilidad
+    password = db.Column(db.String(255), nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     is_active = db.Column(db.Boolean(), nullable=False, default=True)
     is_suspended = db.Column(db.Boolean(), nullable=False, default=False)

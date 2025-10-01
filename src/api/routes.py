@@ -120,14 +120,14 @@ def super_admin_required(f):
 
 
 def admin_or_super_required(f):
-    """admin-rh-financiero o super_admin pueden acceder"""
+    """admin, admin_rh, admin_finanzas o super_admin pueden acceder"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         user = get_current_user()
         if not user:
             return jsonify({"error": "Authentication required"}), 401
 
-        if user['role'] not in ['super_admin', 'admin-rh-financiero']:
+        if user['role'] not in ['super_admin', 'admin', 'admin_rh', 'admin_finanzas']:
             return jsonify({"error": "Admin access required"}), 403
 
         return f(*args, **kwargs)
@@ -1580,7 +1580,7 @@ def create_user():
             return jsonify({"error": "El email ya está en uso"}), 400
 
         # Validate role - super admin can create any role except another super_admin
-        valid_roles = ['admin-rh-financiero', 'usuario']
+        valid_roles = ['admin', 'admin_rh', 'admin_finanzas', 'usuario']
         role = data.get('role', 'usuario')
         if role not in valid_roles:
             return jsonify({"error": f"Rol inválido. Roles disponibles: {', '.join(valid_roles)}"}), 400
@@ -2501,28 +2501,28 @@ def delete_role(role_id):
 
 
 @api.route('/hr/employees', methods=['GET'])
-@role_required(['rh', 'admin', 'super_admin'])
+@role_required(['admin_rh', 'admin', 'super_admin'])
 def get_hr_employees():
-    """Obtener empleados operativos para RH"""
+    """Obtener personal operativo para RH (capital humano en sucursales)"""
     try:
         current_user = get_current_user()
 
-        # Si es RH, solo puede ver empleados de su sucursal
-        if current_user['role'] == 'rh':
+        # Si es admin_rh, solo puede ver empleados de su sucursal
+        if current_user['role'] == 'admin_rh':
             # Obtener la sucursal del usuario RH
             user_obj = User.query.get(current_user['id'])
             if not user_obj or not user_obj.branch_id:
                 return jsonify({"error": "Usuario RH sin sucursal asignada"}), 400
 
             employees = User.query.filter_by(
-                role='operativo',
+                is_operativo=True,
                 branch_id=user_obj.branch_id,
                 is_active=True
             ).all()
         else:
             # Admin y super_admin pueden ver todos
             employees = User.query.filter_by(
-                role='operativo', is_active=True).all()
+                is_operativo=True, is_active=True).all()
 
         return jsonify([emp.serialize() for emp in employees]), 200
     except Exception as e:
@@ -2530,9 +2530,9 @@ def get_hr_employees():
 
 
 @api.route('/hr/employees', methods=['POST'])
-@role_required(['rh', 'super_admin'])
+@role_required(['admin_rh', 'super_admin'])
 def create_hr_employee():
-    """Crear nuevo empleado operativo"""
+    """Crear nuevo personal operativo (capital humano)"""
     try:
         data = request.get_json()
         current_user = get_current_user()
@@ -2542,9 +2542,9 @@ def create_hr_employee():
         if existing:
             return jsonify({"error": "El email ya está registrado"}), 400
 
-        # Si es RH, asignar a su sucursal automáticamente
+        # Si es admin_rh, asignar a su sucursal automáticamente
         branch_id = data.get('branch_id')
-        if current_user['role'] == 'rh':
+        if current_user['role'] == 'admin_rh':
             user_obj = User.query.get(current_user['id'])
             branch_id = user_obj.branch_id if user_obj else None
 
@@ -2553,7 +2553,8 @@ def create_hr_employee():
         employee = User(
             name=data['name'],
             email=data['email'],
-            role='operativo',
+            role='usuario',  # El personal operativo usa rol usuario
+            is_operativo=True,  # Marcado como capital humano operativo
             employee_id=data.get('employee_id'),
             department=data.get('department'),
             position=data.get('position'),
@@ -2579,7 +2580,7 @@ def create_hr_employee():
 
 
 @api.route('/users', methods=['GET'])
-@role_required(['super_admin', 'admin', 'rh'])
+@role_required(['super_admin', 'admin', 'admin_rh'])
 def get_users_with_filter():
     """Obtener usuarios con filtros"""
     try:
@@ -2591,15 +2592,15 @@ def get_users_with_filter():
         if role_filter:
             query = query.filter_by(role=role_filter)
 
-        # Si es RH, solo puede ver operativos de su sucursal y otros RH
-        if current_user['role'] == 'rh':
+        # Si es admin_rh, solo puede ver personal operativo de su sucursal y otros admin_rh
+        if current_user['role'] == 'admin_rh':
             user_obj = User.query.get(current_user['id'])
             if user_obj and user_obj.branch_id:
                 query = query.filter(
                     db.or_(
-                        db.and_(User.role == 'operativo',
+                        db.and_(User.is_operativo == True,
                                 User.branch_id == user_obj.branch_id),
-                        User.role == 'rh'
+                        User.role == 'admin_rh'
                     )
                 )
 

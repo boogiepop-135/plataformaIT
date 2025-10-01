@@ -3,6 +3,7 @@
 ## **1. 👑 DASHBOARD SUPER ADMINISTRADOR**
 
 ### **Layout Principal:**
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ 🏠 Plataforma IT - Super Admin Dashboard            [👤][🚪] │
@@ -36,6 +37,7 @@
 ```
 
 ### **Componentes Específicos:**
+
 - **🔍 Vista Global:** Todos los tickets, usuarios y departamentos
 - **📊 Analytics Avanzados:** Gráficos de rendimiento, tiempo de resolución
 - **⚙️ Configuración del Sistema:** Crear/eliminar departamentos y usuarios
@@ -46,6 +48,7 @@
 ## **2. 🛡️ DASHBOARD ADMINISTRADOR**
 
 ### **Layout Principal:**
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ 🏠 Plataforma IT - Admin Dashboard (IT & RRHH)      [👤][🚪] │
@@ -80,6 +83,7 @@
 ```
 
 ### **Componentes Específicos:**
+
 - **🎯 Vista Filtrada:** Solo tickets de sus departamentos asignados
 - **⚡ Acciones Rápidas:** Cambiar estado, asignar, comentar
 - **📈 Métricas Personales:** Tiempo de resolución, rating promedio
@@ -90,6 +94,7 @@
 ## **3. 👤 DASHBOARD USUARIO ESTÁNDAR**
 
 ### **Layout Principal:**
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ 🏠 Plataforma IT - Mi Panel                         [👤][🚪] │
@@ -132,6 +137,7 @@
 ```
 
 ### **Componentes Específicos:**
+
 - **✏️ Creación Simplificada:** Formulario intuitivo para nuevos tickets
 - **👁️ Vista Personal:** Solo sus propios tickets
 - **⭐ Sistema de Rating:** Calificar tickets resueltos
@@ -142,6 +148,7 @@
 ## **4. 🔔 SISTEMA DE NOTIFICACIONES (Todos los Roles)**
 
 ### **Panel de Notificaciones:**
+
 ```
 ┌─────────────────────────────────────────────┐
 │ 🔔 Notificaciones                    [🔕][⚙️] │
@@ -167,13 +174,15 @@
 ## **5. 📱 COMPONENTES RESPONSIVOS**
 
 ### **Mobile-First Design:**
+
 - **🎫 Lista de Tickets:** Cards colapsables con información clave
 - **➕ Creación Rápida:** Formulario modal optimizado para mobile
 - **🔔 Notificaciones Push:** Integración con service workers
 - **📊 Dashboards Adaptivos:** Gráficos que se ajustan al tamaño de pantalla
 
 ### **Estados Visuales Consistentes:**
+
 - 🔴 **Abierto:** Rojo - Requiere atención
-- 🟡 **En Proceso:** Amarillo - Trabajando en ello  
+- 🟡 **En Proceso:** Amarillo - Trabajando en ello
 - 🟢 **Resuelto:** Verde - Esperando calificación
 - ⚫ **Cerrado:** Gris - Completado y calificado

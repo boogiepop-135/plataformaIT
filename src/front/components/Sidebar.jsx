@@ -79,13 +79,13 @@ export const Sidebar = ({ isCollapsed, setIsCollapsed }) => {
             if (item.superAdminOnly && (!user || user.role !== 'super_admin')) {
                 return false;
             }
-            if (item.adminOrHigher && (!user || !['admin', 'super_admin', 'rh'].includes(user.role))) {
+            if (item.adminOrHigher && (!user || !['admin', 'admin_rh', 'admin_finanzas', 'super_admin'].includes(user.role))) {
                 return false;
             }
-            if (item.hrOrHigher && (!user || !['rh', 'admin', 'super_admin'].includes(user.role))) {
+            if (item.hrOrHigher && (!user || !['admin_rh', 'admin', 'super_admin'].includes(user.role))) {
                 return false;
             }
-            if (item.financieroOnly && (!user || !['admin', 'super_admin', 'rh'].includes(user.role))) {
+            if (item.financieroOnly && (!user || !['admin_finanzas', 'admin', 'super_admin'].includes(user.role))) {
                 return false;
             }
             return true;
