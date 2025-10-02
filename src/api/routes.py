@@ -1583,6 +1583,10 @@ def create_user():
 
         # Check if email already exists (si se proporciona)
         email = data.get('email')
+        # Convertir cadena vacía a None para evitar problemas con UNIQUE constraint
+        if email == '':
+            email = None
+        
         if email:
             existing_email = User.query.filter_by(email=email).first()
             if existing_email:
@@ -1598,7 +1602,7 @@ def create_user():
         user = User(
             username=data['username'],
             full_name=data['full_name'],
-            email=email,
+            email=email,  # Ya será None si estaba vacío
             name=data.get('full_name', ''),  # Campo legacy
             role=role,
             is_active=data.get('is_active', True)

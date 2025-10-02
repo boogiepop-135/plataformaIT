@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom/dist";
 import ScrollToTop from "../components/ScrollToTop";
-import { Sidebar } from "../components/Sidebar";
+import Sidebar from "../components/Sidebar";
 import { TopNavbar } from "../components/TopNavbar";
 import { Footer } from "../components/Footer";
 

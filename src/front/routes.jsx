@@ -22,6 +22,7 @@ import ServiceOrders from "./pages/ServiceOrders";
 import HRManagement from "./components/HRManagement";
 import BudgetModule from "./pages/BudgetModule";
 import RolesBranchesManagement from "./pages/RolesBranchesManagement";
+import Dashboard from "./pages/Dashboard";
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
@@ -36,6 +37,7 @@ export const router = createBrowserRouter(
 
       {/* Nested Routes: Defines sub-routes within the BaseHome component. */}
       <Route path="/" element={<Home />} />
+      <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/kanban" element={<KanbanBoard />} />
       <Route path="/tickets" element={<TicketSystem />} />
       <Route path="/calendar" element={<Calendar />} />

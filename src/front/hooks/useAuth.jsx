@@ -39,10 +39,10 @@ export const AuthProvider = ({ children }) => {
 
             if (response.ok) {
                 const data = await response.json();
-                if (data.valid) {
+                if (data.valid && data.user) {
                     setToken(tokenToVerify);
                     setIsAuthenticated(true);
-                    setUser(data.user || null);
+                    setUser(data.user);
                 } else {
                     localStorage.removeItem('admin_token');
                     setToken(null);
@@ -78,12 +78,14 @@ export const AuthProvider = ({ children }) => {
 
             if (response.ok) {
                 const data = await response.json();
-                if (data.success) {
+                if (data.success && data.user) {
                     setToken(data.token);
                     setIsAuthenticated(true);
-                    setUser(data.user || null);
+                    setUser(data.user);
                     localStorage.setItem('admin_token', data.token);
                     return { success: true };
+                } else {
+                    return { success: false, error: 'Invalid user data received' };
                 }
             } else {
                 const errorData = await response.json();
