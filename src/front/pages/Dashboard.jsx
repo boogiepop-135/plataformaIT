@@ -31,48 +31,84 @@ const Dashboard = () => {
             // En producción, esto vendría de APIs reales
             setTimeout(() => {
                 setStats({
-                    totalUsers: 156,
-                    totalTickets: 1847,
-                    pendingTickets: 23,
-                    completedTickets: 1789,
-                    totalEvents: 45,
-                    todayEvents: 3,
+                    totalUsers: 247,
+                    totalTickets: 3.456,
+                    pendingTickets: 47,
+                    completedTickets: 3.321,
+                    totalEvents: 89,
+                    todayEvents: 7,
                     recentActivities: [
                         {
                             id: 1,
                             type: 'ticket',
-                            title: 'Ticket #1234 completado',
-                            user: 'María González',
-                            time: new Date(Date.now() - 5 * 60 * 1000),
+                            title: 'Sistema de facturación reparado - Cliente: AutoParts RD',
+                            user: 'Carlos Mendoza',
+                            time: new Date(Date.now() - 3 * 60 * 1000),
                             icon: 'fa-check-circle',
                             color: 'text-green-600'
                         },
                         {
                             id: 2,
                             type: 'user',
-                            title: 'Nuevo usuario registrado',
-                            user: 'Carlos Ruiz',
-                            time: new Date(Date.now() - 15 * 60 * 1000),
+                            title: 'Nuevo empleado registrado - Departamento: Ventas',
+                            user: 'Ana Martínez (RH)',
+                            time: new Date(Date.now() - 12 * 60 * 1000),
                             icon: 'fa-user-plus',
                             color: 'text-blue-600'
                         },
                         {
                             id: 3,
+                            type: 'payment',
+                            title: 'Pago procesado - $15,750.00 - Ferretería Central',
+                            user: 'Sistema Automático',
+                            time: new Date(Date.now() - 18 * 60 * 1000),
+                            icon: 'fa-credit-card',
+                            color: 'text-green-600'
+                        },
+                        {
+                            id: 4,
                             type: 'event',
-                            title: 'Reunión de equipo programada',
-                            user: 'Admin',
-                            time: new Date(Date.now() - 30 * 60 * 1000),
+                            title: 'Reunión programada: Revisión mensual de ventas',
+                            user: 'Roberto Silva',
+                            time: new Date(Date.now() - 25 * 60 * 1000),
                             icon: 'fa-calendar-alt',
                             color: 'text-purple-600'
                         },
                         {
-                            id: 4,
+                            id: 5,
                             type: 'ticket',
-                            title: 'Ticket #1235 creado',
-                            user: 'Ana Martínez',
-                            time: new Date(Date.now() - 45 * 60 * 1000),
-                            icon: 'fa-plus-circle',
+                            title: 'Nuevo ticket: Problema con servidor de email',
+                            user: 'Laura Pérez',
+                            time: new Date(Date.now() - 35 * 60 * 1000),
+                            icon: 'fa-exclamation-triangle',
                             color: 'text-orange-600'
+                        },
+                        {
+                            id: 6,
+                            type: 'matrix',
+                            title: 'Nueva matriz exportada: Inventario Q4 2025',
+                            user: 'Miguel Torres',
+                            time: new Date(Date.now() - 47 * 60 * 1000),
+                            icon: 'fa-table',
+                            color: 'text-indigo-600'
+                        },
+                        {
+                            id: 7,
+                            type: 'budget',
+                            title: 'Presupuesto aprobado - Proyecto ERP Nueva Sede',
+                            user: 'Directora Financiera',
+                            time: new Date(Date.now() - 1 * 60 * 60 * 1000),
+                            icon: 'fa-dollar-sign',
+                            color: 'text-emerald-600'
+                        },
+                        {
+                            id: 8,
+                            type: 'system',
+                            title: 'Backup automático completado - Base de datos',
+                            user: 'Sistema',
+                            time: new Date(Date.now() - 2 * 60 * 60 * 1000),
+                            icon: 'fa-database',
+                            color: 'text-gray-600'
                         }
                     ]
                 });
@@ -105,7 +141,7 @@ const Dashboard = () => {
         const diff = Date.now() - date.getTime();
         const minutes = Math.floor(diff / 60000);
         const hours = Math.floor(diff / 3600000);
-        
+
         if (minutes < 1) return 'Hace un momento';
         if (minutes < 60) return `Hace ${minutes} min`;
         if (hours < 24) return `Hace ${hours}h`;
@@ -244,10 +280,10 @@ const Dashboard = () => {
                             <div className="card-body p-0">
                                 <div className="divide-y divide-gray-200">
                                     {stats.recentActivities.map((activity, index) => (
-                                        <div 
-                                            key={activity.id} 
+                                        <div
+                                            key={activity.id}
                                             className="p-6 hover:bg-gray-50 transition-colors duration-200 animate-slideInUp"
-                                            style={{animationDelay: `${index * 100}ms`}}
+                                            style={{ animationDelay: `${index * 100}ms` }}
                                         >
                                             <div className="flex items-start gap-4">
                                                 <div className={`w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0`}>
@@ -343,7 +379,7 @@ const Dashboard = () => {
                                         <span className="font-medium">23%</span>
                                     </div>
                                     <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                                        <div className="bg-blue-600 h-2 rounded-full transition-all duration-1000" style={{width: '23%'}}></div>
+                                        <div className="bg-blue-600 h-2 rounded-full transition-all duration-1000" style={{ width: '23%' }}></div>
                                     </div>
                                 </div>
                                 <div>
@@ -352,7 +388,7 @@ const Dashboard = () => {
                                         <span className="font-medium">45%</span>
                                     </div>
                                     <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                                        <div className="bg-green-600 h-2 rounded-full transition-all duration-1000" style={{width: '45%'}}></div>
+                                        <div className="bg-green-600 h-2 rounded-full transition-all duration-1000" style={{ width: '45%' }}></div>
                                     </div>
                                 </div>
                             </div>

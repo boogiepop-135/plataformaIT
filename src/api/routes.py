@@ -1586,7 +1586,7 @@ def create_user():
         # Convertir cadena vacía a None para evitar problemas con UNIQUE constraint
         if email == '':
             email = None
-        
+
         if email:
             existing_email = User.query.filter_by(email=email).first()
             if existing_email:

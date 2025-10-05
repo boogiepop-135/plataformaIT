@@ -30,16 +30,88 @@ const MatrixManager = () => {
     const fetchMatrices = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${BACKEND_URL}/api/matrices`, {
-                headers: getAuthHeaders()
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setMatrices(data);
-            }
+
+            // Datos de prueba para matrices
+            const mockMatrices = [
+                {
+                    id: 1,
+                    name: 'Inventario Q4 2025',
+                    description: 'Control de inventario cuarto trimestre',
+                    matrix_type: 'inventory',
+                    rows: 5,
+                    columns: 4,
+                    data: [
+                        ['Producto', 'Stock Actual', 'Stock Mínimo', 'Precio Unitario'],
+                        ['Laptops Dell XPS 13', '25', '10', '$1,250.00'],
+                        ['Monitores Samsung 24"', '45', '15', '$320.00'],
+                        ['Teclados Mecánicos', '78', '20', '$89.99'],
+                        ['Mouse Logitech MX Master', '32', '12', '$99.99']
+                    ],
+                    created_at: '2025-09-15T10:30:00Z',
+                    updated_at: '2025-10-01T14:22:00Z'
+                },
+                {
+                    id: 2,
+                    name: 'Empleados por Departamento',
+                    description: 'Distribución de personal por área de trabajo',
+                    matrix_type: 'hr',
+                    rows: 6,
+                    columns: 3,
+                    data: [
+                        ['Departamento', 'Empleados', 'Presupuesto Mensual'],
+                        ['Tecnología', '12', '$48,000'],
+                        ['Ventas', '8', '$32,000'],
+                        ['Recursos Humanos', '4', '$18,000'],
+                        ['Finanzas', '6', '$28,500'],
+                        ['Administración', '3', '$15,000']
+                    ],
+                    created_at: '2025-09-20T09:15:00Z',
+                    updated_at: '2025-09-28T16:45:00Z'
+                },
+                {
+                    id: 3,
+                    name: 'Ventas Mensuales 2025',
+                    description: 'Registro de ventas por mes y producto',
+                    matrix_type: 'sales',
+                    rows: 4,
+                    columns: 5,
+                    data: [
+                        ['Mes', 'Servicios IT', 'Hardware', 'Software', 'Total'],
+                        ['Enero', '$15,230', '$8,450', '$3,200', '$26,880'],
+                        ['Febrero', '$18,900', '$12,300', '$4,150', '$35,350'],
+                        ['Marzo', '$22,100', '$9,800', '$5,670', '$37,570']
+                    ],
+                    created_at: '2025-08-30T11:20:00Z',
+                    updated_at: '2025-10-02T08:30:00Z'
+                },
+                {
+                    id: 4,
+                    name: 'Proveedores y Contactos',
+                    description: 'Lista de proveedores principales con información de contacto',
+                    matrix_type: 'suppliers',
+                    rows: 6,
+                    columns: 4,
+                    data: [
+                        ['Proveedor', 'Contacto', 'Teléfono', 'Email'],
+                        ['TechDist RD', 'María González', '809-555-0123', 'maria@techdist.do'],
+                        ['CompuWorld', 'Carlos Martínez', '829-555-0456', 'carlos@compuworld.com'],
+                        ['Digital Solutions', 'Ana López', '849-555-0789', 'ana@digitalsol.do'],
+                        ['IT Hardware Plus', 'Roberto Silva', '809-555-0321', 'roberto@ithardware.do'],
+                        ['Software Dominicano', 'Laura Pérez', '829-555-0654', 'laura@softdom.com']
+                    ],
+                    created_at: '2025-07-15T14:10:00Z',
+                    updated_at: '2025-09-25T10:15:00Z'
+                }
+            ];
+
+            // Simular delay de API
+            setTimeout(() => {
+                setMatrices(mockMatrices);
+                setLoading(false);
+            }, 800);
+
         } catch (error) {
             console.error('Error loading matrices:', error);
-        } finally {
             setLoading(false);
         }
     };
@@ -56,61 +128,83 @@ const MatrixManager = () => {
         }
     };
 
-    const handleExportMatricesPDF = async () => {
+    const handleExportMatricesCSV = () => {
         if (!isAuthenticated) {
             alert('Debe estar autenticado para exportar');
             return;
         }
 
         try {
-            const response = await fetch(`${BACKEND_URL}/api/matrices/export/pdf`, {
-                headers: getAuthHeaders()
+            let csvContent = '\uFEFF'; // BOM para UTF-8
+
+            matrices.forEach((matrix, index) => {
+                if (index > 0) csvContent += '\n\n';
+                csvContent += `"=== ${matrix.name} ==="\n`;
+                csvContent += `"Descripción: ${matrix.description}"\n`;
+                csvContent += `"Tipo: ${matrix.matrix_type}"\n`;
+                csvContent += `"Creada: ${new Date(matrix.created_at).toLocaleDateString('es-ES')}"\n`;
+                csvContent += `"Actualizada: ${new Date(matrix.updated_at).toLocaleDateString('es-ES')}"\n\n`;
+
+                if (matrix.data && matrix.data.length > 0) {
+                    matrix.data.forEach(row => {
+                        const csvRow = row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',');
+                        csvContent += csvRow + '\n';
+                    });
+                }
             });
 
-            if (response.ok) {
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `matrices_export_${new Date().toISOString().split('T')[0]}.pdf`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            } else {
-                alert('Error al exportar PDF');
-            }
+            // Crear y descargar archivo
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `matrices_export_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            alert(`¡${matrices.length} matrices exportadas exitosamente en formato CSV!`);
         } catch (error) {
-            alert('Error de conexión al exportar PDF');
+            alert('Error al exportar las matrices');
+            console.error('Export error:', error);
         }
     };
 
-    const handleExportMatricesExcel = async () => {
-        if (!isAuthenticated) {
-            alert('Debe estar autenticado para exportar');
-            return;
-        }
-
+    const handleExportSingleMatrix = (matrix) => {
         try {
-            const response = await fetch(`${BACKEND_URL}/api/matrices/export/excel`, {
-                headers: getAuthHeaders()
-            });
+            let csvContent = '\uFEFF'; // BOM para UTF-8
+            csvContent += `"${matrix.name}"\n`;
+            csvContent += `"${matrix.description}"\n`;
+            csvContent += `"Tipo: ${matrix.matrix_type}"\n`;
+            csvContent += `"Creada: ${new Date(matrix.created_at).toLocaleDateString('es-ES')}"\n`;
+            csvContent += `"Actualizada: ${new Date(matrix.updated_at).toLocaleDateString('es-ES')}"\n\n`;
 
-            if (response.ok) {
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `matrices_export_${new Date().toISOString().split('T')[0]}.xlsx`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            } else {
-                alert('Error al exportar Excel');
+            if (matrix.data && matrix.data.length > 0) {
+                matrix.data.forEach(row => {
+                    const csvRow = row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',');
+                    csvContent += csvRow + '\n';
+                });
             }
+
+            // Crear y descargar archivo
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            const filename = matrix.name.replace(/[^a-z0-9\s]/gi, '').replace(/\s+/g, '_').toLowerCase();
+            link.setAttribute('href', url);
+            link.setAttribute('download', `${filename}_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            alert(`¡Matriz "${matrix.name}" exportada exitosamente!`);
         } catch (error) {
-            alert('Error de conexión al exportar Excel');
+            alert('Error al exportar la matriz');
+            console.error('Export error:', error);
         }
     };
 
@@ -339,15 +433,30 @@ const MatrixManager = () => {
                                                 </button>
                                                 <ul className="dropdown-menu">
                                                     <li>
-                                                        <button className="dropdown-item" onClick={handleExportMatricesPDF}>
-                                                            <i className="fas fa-file-pdf me-2 text-danger"></i>PDF
+                                                        <button className="dropdown-item" onClick={handleExportMatricesCSV}>
+                                                            <i className="fas fa-file-csv me-2 text-primary"></i>Exportar Todas (CSV)
                                                         </button>
                                                     </li>
+                                                    <li><hr className="dropdown-divider" /></li>
                                                     <li>
-                                                        <button className="dropdown-item" onClick={handleExportMatricesExcel}>
-                                                            <i className="fas fa-file-excel me-2 text-success"></i>Excel
-                                                        </button>
+                                                        <h6 className="dropdown-header text-muted">
+                                                            <small>Exportar Individual:</small>
+                                                        </h6>
                                                     </li>
+                                                    {matrices.map((matrix) => (
+                                                        <li key={matrix.id}>
+                                                            <button
+                                                                className="dropdown-item d-flex justify-content-between align-items-center"
+                                                                onClick={() => handleExportSingleMatrix(matrix)}
+                                                            >
+                                                                <span>
+                                                                    <i className="fas fa-table me-2 text-info"></i>
+                                                                    {matrix.name}
+                                                                </span>
+                                                                <small className="text-muted">{matrix.matrix_type}</small>
+                                                            </button>
+                                                        </li>
+                                                    ))}
                                                 </ul>
                                             </div>
                                         )}
@@ -409,16 +518,28 @@ const MatrixManager = () => {
                                                             </small>
                                                         </div>
                                                     </div>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            deleteMatrix(matrix.id);
-                                                        }}
-                                                        className="btn btn-outline-danger btn-sm ms-2"
-                                                        title="Eliminar matriz"
-                                                    >
-                                                        <i className="fas fa-trash"></i>
-                                                    </button>
+                                                    <div className="d-flex gap-1">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleExportSingleMatrix(matrix);
+                                                            }}
+                                                            className="btn btn-outline-primary btn-sm"
+                                                            title="Exportar matriz"
+                                                        >
+                                                            <i className="fas fa-download"></i>
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                deleteMatrix(matrix.id);
+                                                            }}
+                                                            className="btn btn-outline-danger btn-sm"
+                                                            title="Eliminar matriz"
+                                                        >
+                                                            <i className="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
